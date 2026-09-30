@@ -1,4 +1,16 @@
 {
+  "actions.discovery.menuTitle": {
+    "source": "Actions · cmux.json…",
+    "identityLocales": {
+      "fr": "‘Actions’ is spelled identically in French; cmux.json is a file name and the ellipsis is punctuation."
+    }
+  },
+  "actions.discovery.dialogTitle": {
+    "source": "Actions · cmux.json",
+    "identityLocales": {
+      "fr": "‘Actions’ is spelled identically in French; cmux.json is a file name and the separator is punctuation."
+    }
+  },
   "mobile.ios106PairingUpdate.releaseLabel": {
     "source": "1.0.6 · September 2026",
     "identityLocales": {
