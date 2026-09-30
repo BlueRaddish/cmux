@@ -64,6 +64,23 @@ public struct UpdateTestSupport {
                 retryTerminatingApplication: { model.setState(.idle) },
                 dismiss: {}
             )))
+        case "held", "heldAsk":
+            // "Update Ready" popovers: held for a quiet moment, or asking about risky agents.
+            let codex = UpdateRelaunchAgent(id: "care", name: "Codex", location: "hq", safety: .care, activity: "Thinking")
+            let claude = UpdateRelaunchAgent(
+                id: "risky", name: "Claude Code", location: "cmux", safety: .risky, activity: "Bash: swift build"
+            )
+            let asking = state == "heldAsk"
+            transition(to: .installing(.init(
+                isAutoUpdate: !asking,
+                retryTerminatingApplication: {},
+                dismiss: {},
+                relaunchBlockers: UpdateRelaunchBlockers(
+                    agents: asking ? [claude, codex] : [codex],
+                    runningCommandCount: asking ? 2 : 0
+                ),
+                updateWhenClear: asking ? {} : nil
+            )))
         case "error":
             let message = env["CMUX_UI_TEST_UPDATE_ERROR_MESSAGE"] ?? "Test update error"
             let error = NSError(domain: "cmux.update.uitest", code: 1, userInfo: [NSLocalizedDescriptionKey: message])
