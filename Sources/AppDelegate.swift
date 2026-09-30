@@ -14697,6 +14697,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
         )
     }
 
+    /// Whether a shortcut confirmation response authorizes the pending terminate request.
+    /// Cancellation must explicitly clear the one-shot confirmation guard because an updater
+    /// relaunch can set it before AppKit presents this warning.
+    static func quitWarningWasConfirmed(response: NSApplication.ModalResponse) -> Bool {
+        response == .alertFirstButtonReturn
+    }
+
     private func handleQuitShortcutWarning(
         onCancel: (() -> Void)? = nil
     ) -> Bool {
@@ -14720,12 +14727,15 @@ final class AppDelegate: NSObject, NSApplicationDelegate, UNUserNotificationCent
                 QuitConfirmationStore(defaults: .standard).setEnabled(false)
             }
 
-            if response == .alertFirstButtonReturn {
+            if Self.quitWarningWasConfirmed(response: response) {
                 // Mark as confirmed so applicationShouldTerminate does not show a
                 // second alert when NSApp.terminate re-enters the delegate callback.
                 self?.isQuitWarningConfirmed = true
                 AppDelegate.requestApplicationTermination()
             } else {
+                // An updater relaunch may have set this before presenting the warning. A
+                // cancelled shortcut must not let a later Cmd+Q bypass confirmation.
+                self?.isQuitWarningConfirmed = false
                 onCancel?()
             }
         }

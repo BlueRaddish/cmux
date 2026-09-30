@@ -109,6 +109,12 @@ struct QuitConfirmationAlertPresenterTests {
         )
     }
 
+    @Test
+    func shortcutQuitConfirmationOnlyMarksConfirmedOnQuit() {
+        #expect(AppDelegate.quitWarningWasConfirmed(response: .alertFirstButtonReturn))
+        #expect(!AppDelegate.quitWarningWasConfirmed(response: .alertSecondButtonReturn))
+    }
+
     @Test("Quit confirmation includes dirty windowless recoverable route owners")
     func quitConfirmationIncludesDirtyWindowlessRecoverableRouteOwners() async throws {
         try await AppContextSerialGate.withExclusiveAppContext {
