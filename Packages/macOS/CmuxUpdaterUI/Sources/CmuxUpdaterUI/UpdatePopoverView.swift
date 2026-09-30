@@ -474,10 +474,14 @@ private struct WaitingToRelaunchView: View {
                 .accessibilityIdentifier("UpdateRelaunchAgentList")
             }
 
-            // Only forward actions: closing the popover (click away or Esc) changes nothing,
-            // which is already "later".
-            HStack(spacing: 8) {
-                Spacer(minLength: 0)
+            UpdatePopoverButtonRow {
+                Button(String(localized: "common.later", defaultValue: "Later")) {
+                    installing.dismiss()
+                    dismiss()
+                }
+                .keyboardShortcut(.cancelAction)
+                .controlSize(.small)
+            } trailing: {
                 if let updateWhenClear = installing.updateWhenClear {
                     // No default-action shortcut on Update Now here: it can stop what agents run.
                     updateNowButton

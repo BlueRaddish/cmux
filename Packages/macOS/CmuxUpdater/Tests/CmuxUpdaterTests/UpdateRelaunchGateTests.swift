@@ -142,6 +142,23 @@ private final class CallCounter: @unchecked Sendable {
         #expect(host.prepareCount == 1)
     }
 
+    @Test func askingUserStaysManualAfterRiskyWorkFinishes() async {
+        let driver = makeDriver()
+        let installs = CallCounter()
+        host.blockers = blockers(risky: 1)
+        _ = driver.handleShouldPostponeRelaunch(installHandler: { installs.count += 1 })
+
+        #expect(driver.relaunchGate.mode == .askUser)
+        host.blockers = .empty
+        await tick()
+
+        // Clearing the blocker changes the copy, but an explicit user install must never
+        // become an automatic quiet-moment relaunch.
+        #expect(model.description == "Choose Update Now or Later.")
+        #expect(installs.count == 0)
+        #expect(driver.relaunchGate.isWaiting)
+    }
+
     /// Update When Agents Finish waits for every working agent, including ones that would
     /// resume mid-task, but not for other terminal commands such as a dev server that never
     /// finishes.

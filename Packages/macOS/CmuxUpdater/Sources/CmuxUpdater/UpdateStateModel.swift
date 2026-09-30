@@ -425,7 +425,12 @@ public final class UpdateStateModel {
             return String(localized: "update.relaunch.waitingForAgents", defaultValue: "Updates when your agents finish.")
         case .askingUser where blockers.needsConfirmation:
             return String(localized: "update.relaunch.confirmRisky", defaultValue: "Relaunching now stops what these are running.")
-        case .askingUser, .quietMoment:
+        case .askingUser:
+            return String(
+                localized: "update.relaunch.awaitingApproval",
+                defaultValue: "Choose Update Now or Later."
+            )
+        case .quietMoment:
             if blockers.needsConfirmation {
                 return String(localized: "update.autoInstall.waitingRisky", defaultValue: "Installs after these finish and you step away.")
             }
