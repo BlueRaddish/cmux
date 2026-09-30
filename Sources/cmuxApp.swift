@@ -578,6 +578,13 @@ struct cmuxApp: App {
                 Button("Show Loading State") {
                     appDelegate.showUpdatePillLoading(nil)
                 }
+                Menu(String(localized: "update.debug.state.menu", defaultValue: "Show Update State…")) {
+                    ForEach(DebugUpdateStateScenario.allCases, id: \.self) { scenario in
+                        Button(scenario.menuTitle) {
+                            appDelegate.updateViewModel.debugShowState(scenario)
+                        }
+                    }
+                }
                 Menu("Show Update Error…") {
                     ForEach(DebugUpdateErrorScenario.allCases, id: \.self) { scenario in
                         Button(scenario.menuTitle) {

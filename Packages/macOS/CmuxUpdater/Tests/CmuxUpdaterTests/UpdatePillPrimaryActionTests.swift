@@ -67,3 +67,15 @@ import Testing
         #expect(model.pillPrimaryAction == .acknowledgeNotFound)
     }
 }
+
+@MainActor
+@Suite struct UpdatePillBadgeTests {
+    @Test func stagedUpdatePillIsTextOnly() {
+        let model = UpdateStateModel()
+        model.setState(.installing(.init(retryTerminatingApplication: {}, dismiss: {})))
+        #expect(!model.showsBadge)
+
+        model.setState(.downloading(.init(cancel: {}, expectedLength: 100, progress: 10)))
+        #expect(model.showsBadge)
+    }
+}

@@ -179,6 +179,16 @@ public final class UpdateStateModel {
         detectedUpdateVersion = version
     }
 
+    /// Overrides the state with a synthetic one so every pill and popover can be previewed from
+    /// the debug menu. DEBUG-only.
+    public func debugShowState(_ scenario: DebugUpdateStateScenario) {
+        debugOverrideText = nil
+        setOverrideState(scenario.state(
+            show: { [weak self] next in self?.debugShowState(next) },
+            end: { [weak self] in self?.setOverrideState(nil) }
+        ))
+    }
+
     /// Overrides the state with a synthetic error so the matching error popover can be previewed
     /// from the debug menu. DEBUG-only.
     public func debugShowUpdateError(_ scenario: DebugUpdateErrorScenario) {
@@ -319,7 +329,14 @@ public final class UpdateStateModel {
         }
     }
 
-    /// The SF Symbol name for the current phase, or `nil` when idle.
+    /// Whether the pill shows a leading icon or progress badge. Update Ready and Restart to
+    /// Update are plain text: the words say everything.
+    public var showsBadge: Bool {
+        if case .installing = effectiveState, !showsDetectedBackgroundUpdate { return false }
+        return true
+    }
+
+    /// The SF Symbol name for the current phase, or `nil` when idle or text-only.
     public var iconName: String? {
         if showsDetectedBackgroundUpdate {
             return "shippingbox.fill"
@@ -340,8 +357,7 @@ public final class UpdateStateModel {
         case .extracting:
             return "shippingbox"
         case .installing:
-            // Update Ready and Restart to Update both finish by restarting cmux.
-            return "arrow.clockwise.circle.fill"
+            return nil
         case .notFound:
             return "info.circle"
         case .error:

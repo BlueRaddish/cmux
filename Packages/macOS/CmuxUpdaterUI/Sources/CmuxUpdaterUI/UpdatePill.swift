@@ -49,8 +49,10 @@ public struct UpdatePill: View {
     private var pillButton: some View {
         Button(action: handleTap) {
             HStack(spacing: 6) {
-                UpdateBadge(model: model, appearance: appearance)
-                    .frame(width: 14, height: 14)
+                if model.showsBadge {
+                    UpdateBadge(model: model, appearance: appearance)
+                        .frame(width: 14, height: 14)
+                }
 
                 Text(model.text)
                     .cmuxFont(size: 11, weight: .medium)
