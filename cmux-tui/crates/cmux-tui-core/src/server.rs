@@ -15138,7 +15138,11 @@ fn handle_command_with_cancellation(
             Ok(json!({}))
         }
         Command::CloseSurface { surface } => {
-            get_surface(mux, surface)?;
+            // A kept-layout tab (`end-terminals-keep-layout-v1`) has no
+            // runtime surface after a restart but is still a placed tab.
+            if get_surface(mux, surface).is_err() && !surface_has_view_placement(mux, surface) {
+                anyhow::bail!("unknown surface {surface}");
+            }
             if !mux.close_surface(surface)? {
                 anyhow::bail!("unknown surface {surface}");
             }
