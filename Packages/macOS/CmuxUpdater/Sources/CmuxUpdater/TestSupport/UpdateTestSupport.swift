@@ -57,7 +57,13 @@ public struct UpdateTestSupport {
         case "extracting":
             transition(to: .extracting(.init(progress: 0.5)))
         case "installing":
-            transition(to: .installing(.init(isAutoUpdate: false, retryTerminatingApplication: {}, dismiss: {})))
+            // Restarting ends the staged state, as a real relaunch would; UI tests observe that.
+            let model = self.model
+            transition(to: .installing(.init(
+                isAutoUpdate: false,
+                retryTerminatingApplication: { model.setState(.idle) },
+                dismiss: {}
+            )))
         case "error":
             let message = env["CMUX_UI_TEST_UPDATE_ERROR_MESSAGE"] ?? "Test update error"
             let error = NSError(domain: "cmux.update.uitest", code: 1, userInfo: [NSLocalizedDescriptionKey: message])

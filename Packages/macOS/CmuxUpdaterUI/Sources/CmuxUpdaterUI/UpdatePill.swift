@@ -68,30 +68,59 @@ public struct UpdatePill: View {
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
-        .safeHelp(model.text)
+        .safeHelp(helpText)
         .accessibilityLabel(model.text)
         .accessibilityIdentifier("UpdatePill")
+        .contextMenu {
+            if model.pillPrimaryAction == .installLatest || model.pillPrimaryAction == .restart {
+                Button(String(localized: "update.pill.showDetails", defaultValue: "Show Details…")) {
+                    showDetails()
+                }
+            }
+        }
+    }
+
+    private var helpText: String {
+        switch model.pillPrimaryAction {
+        case .installLatest:
+            return String(localized: "common.installAndRelaunch", defaultValue: "Install and Relaunch")
+        case .restart:
+            return String(localized: "common.restartNow", defaultValue: "Restart Now")
+        case .acknowledgeNotFound, .togglePopover:
+            return model.text
+        }
     }
 
     private func handleTap() {
-        if model.showsDetectedBackgroundUpdate {
-            if model.hasCachedDetectedUpdateDetails {
-                showPopover.toggle()
-            } else if showPopover {
-                showPopover = false
-            } else {
+        switch model.pillPrimaryAction {
+        case .installLatest:
+            // One click installs: re-resolve the newest version, then download, install, and
+            // relaunch. The popover would only repeat the same Install and Relaunch choice.
+            showPopover = false
+            actions.attemptUpdate()
+        case .restart:
+            guard case .installing(let installing) = model.effectiveState else { return }
+            showPopover = false
+            installing.retryTerminatingApplication()
+            // A risky agent or running command holds the relaunch for the user's say-so; show
+            // that question instead of leaving the click without a visible answer.
+            if case .installing(let held) = model.effectiveState, held.relaunchBlockers != nil {
                 showPopover = true
-                actions.checkForUpdatesInCustomUI()
             }
-            return
-        }
-
-        if case .notFound(let notFound) = model.state {
+        case .acknowledgeNotFound:
+            guard case .notFound(let notFound) = model.state else { return }
             model.setState(.idle)
             notFound.acknowledgement()
-        } else {
+        case .togglePopover:
             showPopover.toggle()
         }
+    }
+
+    private func showDetails() {
+        if model.showsDetectedBackgroundUpdate, !model.hasCachedDetectedUpdateDetails {
+            actions.checkForUpdatesInCustomUI()
+        }
+        showPopover = true
     }
 
     private var textWidth: CGFloat? {

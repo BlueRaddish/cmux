@@ -235,6 +235,24 @@ public final class UpdateStateModel {
         !effectiveState.isIdle || showsDetectedBackgroundUpdate
     }
 
+    /// What a plain click on the update pill does. Update Available and Restart to Complete
+    /// Update act in one click; the details popover stays reachable from the pill's context menu.
+    public var pillPrimaryAction: UpdatePillPrimaryAction {
+        if showsDetectedBackgroundUpdate {
+            return .installLatest
+        }
+        switch effectiveState {
+        case .updateAvailable:
+            return .installLatest
+        case .installing(let installing) where installing.relaunchBlockers == nil:
+            return .restart
+        case .notFound:
+            return .acknowledgeNotFound
+        default:
+            return .togglePopover
+        }
+    }
+
     /// The pill's title text for the current phase.
     public var text: String {
         #if DEBUG
@@ -272,7 +290,9 @@ public final class UpdateStateModel {
             if install.relaunchBlockers != nil {
                 return String(localized: "update.readyWaiting", defaultValue: "Update Ready")
             }
-            return install.isAutoUpdate ? String(localized: "update.restartToComplete", defaultValue: "Restart to Complete Update") : String(localized: "update.installing.status", defaultValue: "Installing…")
+            // Sparkle has staged the update and only needs cmux to quit, so the pill names that
+            // action rather than claiming an install is still running.
+            return String(localized: "update.restartToComplete", defaultValue: "Restart to Complete Update")
         case .notFound:
             return String(localized: "update.noUpdates.title", defaultValue: "No Updates Available")
         case .error(let err):
@@ -348,7 +368,7 @@ public final class UpdateStateModel {
             if let blockers = install.relaunchBlockers {
                 return Self.relaunchBlockersDescription(blockers, askingUser: install.updateWhenClear != nil)
             }
-            return install.isAutoUpdate ? String(localized: "update.restartToComplete", defaultValue: "Restart to Complete Update") : String(localized: "update.installingAndRestarting", defaultValue: "Installing update and preparing to restart")
+            return String(localized: "update.restartToComplete", defaultValue: "Restart to Complete Update")
         case .notFound:
             return String(localized: "update.noUpdates.message", defaultValue: "You are running the latest version")
         case .error(let err):

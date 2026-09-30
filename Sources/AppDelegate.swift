@@ -20492,6 +20492,11 @@ extension AppDelegate: UpdateActionDelegate, UpdateActionsHost {
     }
 
     func updaterWillRelaunchApplication() {
+        // The user already chose Install and Relaunch (or Restart Now), or turned on automatic
+        // installs, and the relaunch restores every workspace. Sparkle's installer quits cmux
+        // with an ordinary quit event right after this, so asking "Quit cmux?" again would only
+        // let a stray Escape cancel the relaunch and strand the staged update.
+        isQuitWarningConfirmed = true
         persistSessionForUpdateRelaunch()
         TerminalController.shared.stop(cleanupDiscoveryState: true)
         NSApp.invalidateRestorableState()
