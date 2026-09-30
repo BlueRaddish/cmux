@@ -51,6 +51,10 @@ public enum DaemonCapabilities {
     /// is kept: `keep` on creation, `set-terminal-keep`, and
     /// `shutdown-daemon end_terminals` (cmux-tui PR 15600).
     public static let terminalReap = "terminal-reap-v1"
+    /// `keep_layout` on `shutdown-daemon end_terminals`: every terminal ends
+    /// but placed ones keep their tabs, dead, so the next launch restarts a
+    /// shell in each with the same splits (Quit's End Sessions, Keep Layout).
+    public static let endTerminalsKeepLayout = "end-terminals-keep-layout-v1"
     /// `close-tabs` and `end_terminals` on the container closes: many tabs and
     /// the terminals they end close in one daemon commit.
     public static let batchClose = "batch-close-v1"
