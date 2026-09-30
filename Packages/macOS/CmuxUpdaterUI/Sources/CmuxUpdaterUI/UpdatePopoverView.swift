@@ -439,49 +439,49 @@ private struct InstallingView: View {
     }
 }
 
-/// A held update relaunch: one compact list of the agent sessions it would resume, each with
-/// a safety chip and what it is doing, and the choices that fit why it is held.
+/// A held update relaunch: one sentence, the agents that are working, and standard buttons.
+/// When an agent is working the default choice is to update once they finish.
 private struct WaitingToRelaunchView: View {
     let installing: UpdateState.Installing
     let blockers: UpdateRelaunchBlockers
     let dismiss: () -> Void
 
-    private var isAskingUser: Bool { installing.updateWhenClear != nil }
-
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            VStack(alignment: .leading, spacing: 8) {
+            VStack(alignment: .leading, spacing: 4) {
                 Text(String(localized: "update.readyWaiting", defaultValue: "Update Ready"))
                     .cmuxFont(size: 13, weight: .semibold)
 
-                Text(UpdateStateModel.relaunchBlockersDescription(blockers, askingUser: isAskingUser))
+                Text(UpdateStateModel.relaunchBlockersDescription(blockers, holdMode: installing.holdMode))
                     .cmuxFont(size: 11)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            if !blockers.agents.isEmpty || blockers.runningCommandCount > 0 {
-                VStack(alignment: .leading, spacing: 6) {
-                    // Risky first: those are the ones the user is deciding about.
-                    ForEach(sortedAgents) { agent in
-                        AgentRow(agent: agent)
+            if !workingAgents.isEmpty || blockers.runningCommandCount > 0 {
+                VStack(alignment: .leading, spacing: 4) {
+                    ForEach(workingAgents) { agent in
+                        WorkRow(
+                            safety: agent.safety,
+                            title: agent.name,
+                            detail: agent.activity,
+                            help: agent.location.isEmpty ? agent.activity : "\(agent.location): \(agent.activity)"
+                        )
                     }
                     if blockers.runningCommandCount > 0 {
-                        HStack(spacing: 6) {
-                            SafetyChip(safety: .risky)
-                            Text(UpdateStateModel.runningCommandsLabel(blockers.runningCommandCount))
-                                .cmuxFont(size: 11)
-                                .lineLimit(1)
-                        }
+                        WorkRow(
+                            safety: .risky,
+                            title: UpdateStateModel.runningCommandsLabel(blockers.runningCommandCount),
+                            detail: nil,
+                            help: nil
+                        )
                     }
                 }
                 .accessibilityIdentifier("UpdateRelaunchAgentList")
             }
 
             UpdatePopoverButtonRow {
-                Button(isAskingUser
-                    ? String(localized: "update.wait", defaultValue: "Wait")
-                    : String(localized: "common.later", defaultValue: "Later")) {
+                Button(String(localized: "common.later", defaultValue: "Later")) {
                     installing.dismiss()
                     dismiss()
                 }
@@ -489,73 +489,69 @@ private struct WaitingToRelaunchView: View {
                 .controlSize(.small)
             } trailing: {
                 if let updateWhenClear = installing.updateWhenClear {
-                    Button(String(localized: "update.updateWhenFinished", defaultValue: "Update When These Finish")) {
+                    // No default-action shortcut on Update Now here: it can stop what agents run.
+                    updateNowButton
+                    Button(String(localized: "update.relaunch.updateWhenAgentsFinish", defaultValue: "Update When Agents Finish")) {
                         updateWhenClear()
                         dismiss()
                     }
                     .keyboardShortcut(.defaultAction)
                     .controlSize(.small)
+                } else if installing.holdMode == .waitingForAgents || blockers.needsConfirmation {
+                    updateNowButton
+                } else {
+                    updateNowButton
+                        .keyboardShortcut(.defaultAction)
                 }
-
-                // No default-action shortcut: this stops risky agents' commands.
-                Button(blockers.needsConfirmation
-                    ? String(localized: "update.updateAnyway", defaultValue: "Update Anyway")
-                    : String(localized: "update.installNow", defaultValue: "Install Now")) {
-                    installing.retryTerminatingApplication()
-                    dismiss()
-                }
-                .buttonStyle(.borderedProminent)
-                .controlSize(.small)
             }
         }
         .padding(16)
     }
 
-    private var sortedAgents: [UpdateRelaunchAgent] {
-        let order: [UpdateResumeSafety: Int] = [.risky: 0, .care: 1, .safe: 2]
-        return blockers.agents.sorted { (order[$0.safety] ?? 3) < (order[$1.safety] ?? 3) }
+    private var updateNowButton: some View {
+        Button(String(localized: "update.updateNow", defaultValue: "Update Now")) {
+            installing.retryTerminatingApplication()
+            dismiss()
+        }
+        .controlSize(.small)
+    }
+
+    /// Risky first: those are what updating now would cut off. Idle agents resume with no
+    /// loss, so they are not listed.
+    private var workingAgents: [UpdateRelaunchAgent] {
+        blockers.riskyAgents + blockers.careAgents
     }
 }
 
-private struct AgentRow: View {
-    let agent: UpdateRelaunchAgent
+/// One thing a relaunch would touch, as plain text: what it is, what it is doing, and whether
+/// it resumes or is cut off.
+private struct WorkRow: View {
+    let safety: UpdateResumeSafety
+    let title: String
+    let detail: String?
+    let help: String?
 
     var body: some View {
         HStack(spacing: 6) {
-            SafetyChip(safety: agent.safety)
-            Text(agent.name)
-                .cmuxFont(size: 11, weight: .medium)
+            Text(title)
+                .cmuxFont(size: 11)
                 .lineLimit(1)
-            Text(agent.activity)
+                .layoutPriority(1)
+            if let detail {
+                Text(detail)
+                    .cmuxFont(size: 11)
+                    .foregroundColor(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+            }
+            Spacer(minLength: 6)
+            Text(UpdateStateModel.safetyLabel(safety))
                 .cmuxFont(size: 11)
                 .foregroundColor(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
+                .fixedSize()
         }
-        .help(agent.location.isEmpty ? agent.activity : "\(agent.location): \(agent.activity)")
+        .help(help ?? title)
         .accessibilityElement(children: .combine)
-    }
-}
-
-private struct SafetyChip: View {
-    let safety: UpdateResumeSafety
-
-    var body: some View {
-        Text(UpdateStateModel.safetyLabel(safety))
-            .cmuxFont(size: 9, weight: .semibold)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1)
-            .background(Capsule().fill(color.opacity(0.18)))
-            .foregroundColor(color)
-            .fixedSize()
-    }
-
-    private var color: Color {
-        switch safety {
-        case .safe: return .green
-        case .care: return .blue
-        case .risky: return .orange
-        }
     }
 }
 

@@ -64,22 +64,40 @@ public struct UpdateTestSupport {
                 retryTerminatingApplication: { model.setState(.idle) },
                 dismiss: {}
             )))
-        case "held", "heldAsk":
-            // "Update Ready" popovers: held for a quiet moment, or asking about risky agents.
+        case "held", "heldAsk", "heldWaiting":
+            // "Update Ready" popovers: held for a quiet moment, asking about risky agents, or
+            // waiting for agents to finish.
             let codex = UpdateRelaunchAgent(id: "care", name: "Codex", location: "hq", safety: .care, activity: "Thinking")
             let claude = UpdateRelaunchAgent(
                 id: "risky", name: "Claude Code", location: "cmux", safety: .risky, activity: "Bash: swift build"
             )
             let asking = state == "heldAsk"
+            let holdMode: UpdateRelaunchHoldMode = switch state {
+            case "heldAsk": .askingUser
+            case "heldWaiting": .waitingForAgents
+            default: .quietMoment
+            }
+            let model = self.model
+            let held = UpdateRelaunchBlockers(
+                agents: asking ? [claude, codex] : [codex],
+                runningCommandCount: asking ? 2 : 0
+            )
+            // Update When Agents Finish switches to the waiting popover, as the gate does.
             transition(to: .installing(.init(
-                isAutoUpdate: !asking,
-                retryTerminatingApplication: {},
+                isAutoUpdate: true,
+                retryTerminatingApplication: { model.setState(.idle) },
                 dismiss: {},
-                relaunchBlockers: UpdateRelaunchBlockers(
-                    agents: asking ? [claude, codex] : [codex],
-                    runningCommandCount: asking ? 2 : 0
-                ),
-                updateWhenClear: asking ? {} : nil
+                relaunchBlockers: held,
+                holdMode: holdMode,
+                updateWhenClear: holdMode == .waitingForAgents ? nil : {
+                    model.setState(.installing(.init(
+                        isAutoUpdate: true,
+                        retryTerminatingApplication: { model.setState(.idle) },
+                        dismiss: {},
+                        relaunchBlockers: held,
+                        holdMode: .waitingForAgents
+                    )))
+                }
             )))
         case "error":
             let message = env["CMUX_UI_TEST_UPDATE_ERROR_MESSAGE"] ?? "Test update error"

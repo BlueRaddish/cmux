@@ -131,7 +131,7 @@ private final class CallCounter: @unchecked Sendable {
         #expect(driver.relaunchGate.mode == .askUser)
         #expect(installing?.updateWhenClear != nil)
         #expect(waitingBlockers?.riskyAgents.count == 1)
-        #expect(model.description == "Relaunching now stops what these are running. 2 agents will be resumed mid-task.")
+        #expect(model.description == "Relaunching now stops what these are running.")
         // Asking never relaunches on its own, even once the risky agent finishes.
         host.blockers = blockers(care: 2)
         await tick()
@@ -142,7 +142,10 @@ private final class CallCounter: @unchecked Sendable {
         #expect(host.prepareCount == 1)
     }
 
-    @Test func updateWhenTheseFinishRelaunchesOnceRiskyAgentsClear() async {
+    /// Update When Agents Finish waits for every working agent, including ones that would
+    /// resume mid-task, but not for other terminal commands such as a dev server that never
+    /// finishes.
+    @Test func updateWhenAgentsFinishWaitsForEveryWorkingAgent() async {
         let driver = makeDriver()
         let installs = CallCounter()
         host.blockers = blockers(risky: 2)
@@ -151,12 +154,17 @@ private final class CallCounter: @unchecked Sendable {
 
         installing?.updateWhenClear?()
         #expect(driver.relaunchGate.mode == .whenClear)
+        #expect(installing?.holdMode == .waitingForAgents)
         #expect(installing?.updateWhenClear == nil)
+        #expect(model.description == "Updates when your agents finish.")
 
         await tick()
         #expect(installs.count == 0)
-        // Care agents and recent input do not hold a relaunch the user asked for.
         host.blockers = blockers(care: 1)
+        await tick()
+        #expect(installs.count == 0)
+
+        host.blockers = blockers(commands: 1)
         await recheck { installs.count == 1 }
     }
 
@@ -220,7 +228,9 @@ private final class CallCounter: @unchecked Sendable {
         let installs = CallCounter()
         host.blockers = blockers(care: 3)
         startAutomaticInstall(driver, installs: installs)
-        #expect(model.description.hasSuffix("3 agents will be resumed mid-task."))
+        #expect(model.description == "Installs when you step away. Everything resumes where it left off.")
+        // Working agents make Update When Agents Finish available on an automatic hold too.
+        #expect(installing?.updateWhenClear != nil)
 
         await recheck { installs.count == 1 }
     }

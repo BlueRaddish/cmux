@@ -31,7 +31,9 @@ public struct UpdateAppearance: Sendable {
             return .secondary
         case .updateAvailable:
             return accent
-        case .startingDownload, .downloading, .extracting, .installing:
+        case .installing:
+            return .white
+        case .startingDownload, .downloading, .extracting:
             return .secondary
         case .notFound:
             return .secondary
@@ -49,7 +51,9 @@ public struct UpdateAppearance: Sendable {
         switch model.effectiveState {
         case .permissionRequest:
             return accentDarkened(by: 0.3)
-        case .updateAvailable:
+        case .updateAvailable, .installing:
+            // A downloaded update waiting on the user (Update Ready, Restart to Update) is as
+            // actionable as an available one.
             return accent
         case .notFound:
             return accentDarkened(by: 0.5)
@@ -69,7 +73,7 @@ public struct UpdateAppearance: Sendable {
         switch model.effectiveState {
         case .permissionRequest:
             return .white
-        case .updateAvailable:
+        case .updateAvailable, .installing:
             return .white
         case .notFound:
             return .white

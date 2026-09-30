@@ -78,6 +78,7 @@ enum LayoutCase: String, CaseIterable, Sendable {
     case restartRequired
     case heldQuietMoment
     case heldAskingUser
+    case heldWaitingForAgents
     case notFound
     case error
 
@@ -101,7 +102,8 @@ enum LayoutCase: String, CaseIterable, Sendable {
                 isAutoUpdate: true,
                 retryTerminatingApplication: {},
                 dismiss: {},
-                relaunchBlockers: UpdateRelaunchBlockers(agents: [Self.careAgent], runningCommandCount: 0)
+                relaunchBlockers: UpdateRelaunchBlockers(agents: [Self.careAgent], runningCommandCount: 0),
+                updateWhenClear: {}
             )))
         case .heldAskingUser:
             model.setState(.installing(.init(
@@ -111,7 +113,16 @@ enum LayoutCase: String, CaseIterable, Sendable {
                     agents: [Self.riskyAgent, Self.careAgent],
                     runningCommandCount: 2
                 ),
+                holdMode: .askingUser,
                 updateWhenClear: {}
+            )))
+        case .heldWaitingForAgents:
+            model.setState(.installing(.init(
+                isAutoUpdate: true,
+                retryTerminatingApplication: {},
+                dismiss: {},
+                relaunchBlockers: UpdateRelaunchBlockers(agents: [Self.riskyAgent, Self.careAgent], runningCommandCount: 0),
+                holdMode: .waitingForAgents
             )))
         case .notFound:
             model.setState(.notFound(.init(acknowledgement: {})))

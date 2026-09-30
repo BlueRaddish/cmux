@@ -53,12 +53,24 @@ public struct UpdateRelaunchBlockers: Equatable, Sendable {
     public var riskyAgents: [UpdateRelaunchAgent] { agents.filter { $0.safety == .risky } }
     /// Agents that resume mid-task and re-issue their work.
     public var careAgents: [UpdateRelaunchAgent] { agents.filter { $0.safety == .care } }
+    /// Agents doing something now (risky or care), which Update When Agents Finish waits for.
+    public var workingAgents: [UpdateRelaunchAgent] { agents.filter { $0.safety != .safe } }
 
     /// Whether relaunching now needs the user's say-so: a risky agent or a running command.
     /// Safe and care agents resume on their own.
     public var needsConfirmation: Bool {
         !riskyAgents.isEmpty || runningCommandCount > 0
     }
+}
+
+/// What a held update relaunch is waiting for, as the popover shows it.
+public enum UpdateRelaunchHoldMode: Equatable, Sendable {
+    /// An automatic install waiting for nothing risky and a minute without input.
+    case quietMoment
+    /// The user asked to install while something risky runs; waiting for their answer.
+    case askingUser
+    /// The user chose Update When Agents Finish.
+    case waitingForAgents
 }
 
 /// Holds an update relaunch until relaunching is safe or the user decides.
@@ -71,10 +83,11 @@ public struct UpdateRelaunchBlockers: Equatable, Sendable {
 ///   has touched the keyboard or mouse for ``quietPeriod``. There is no timeout; until then the
 ///   pill offers Install Now, and quitting cmux still installs the update.
 /// - ``Mode/askUser``: the user asked to install while something is risky. The popover lists
-///   the agents and offers Wait, Update When These Finish, and Update Anyway. It never
+///   the agents and offers Later, Update When Agents Finish, and Update Now. It never
 ///   relaunches on its own.
-/// - ``Mode/whenClear``: the user chose Update When These Finish. It relaunches as soon as
-///   nothing is risky.
+/// - ``Mode/whenClear``: the user chose Update When Agents Finish. It relaunches as soon as no
+///   agent is working. Other terminal commands do not hold it: a dev server never finishes,
+///   and the user saw them listed when choosing.
 ///
 /// Before relaunching on its own, the gate asks the host to prepare (a fresh session capture,
 /// so every agent is saved with its resume binding), then checks again, because an agent can
@@ -82,8 +95,8 @@ public struct UpdateRelaunchBlockers: Equatable, Sendable {
 ///
 /// While holding, the gate publishes ``UpdateState/installing(_:)`` carrying the current
 /// ``UpdateRelaunchBlockers``. Install Now / Update Anyway and Later / Wait are that state's
-/// `retryTerminatingApplication` and `dismiss` actions; Update When These Finish is
-/// `updateWhenClear`.
+/// `retryTerminatingApplication` and `dismiss` actions; Update When Agents Finish is
+/// `updateWhenClear`, offered in the other modes whenever an agent is working.
 @MainActor
 final class UpdateRelaunchGate {
     /// How often a holding gate re-reads the host's blockers and input idle time.
@@ -96,6 +109,14 @@ final class UpdateRelaunchGate {
         case quietMoment
         case askUser
         case whenClear
+
+        var holdMode: UpdateRelaunchHoldMode {
+            switch self {
+            case .quietMoment: return .quietMoment
+            case .askUser: return .askingUser
+            case .whenClear: return .waitingForAgents
+            }
+        }
     }
 
     private let clock: any UpdateClock
@@ -158,7 +179,7 @@ final class UpdateRelaunchGate {
         case .askUser:
             return false
         case .whenClear:
-            return !readiness.blockers.needsConfirmation
+            return readiness.blockers.workingAgents.isEmpty
         case .quietMoment:
             return !readiness.blockers.needsConfirmation && readiness.idle >= quietPeriod
         }
@@ -264,9 +285,10 @@ final class UpdateRelaunchGate {
                 self.finish(request, relaunching: false)
             },
             relaunchBlockers: current,
-            updateWhenClear: request.mode == .askUser ? { [weak self, weak request] in
+            holdMode: request.mode.holdMode,
+            updateWhenClear: request.mode != .whenClear && !current.workingAgents.isEmpty ? { [weak self, weak request] in
                 guard let self, let request, self.pending === request else { return }
-                self.log.append("update relaunch gate: update when these finish")
+                self.log.append("update relaunch gate: update when agents finish")
                 request.mode = .whenClear
                 self.publishHold(request, blockers: current, actions: actions)
             } : nil

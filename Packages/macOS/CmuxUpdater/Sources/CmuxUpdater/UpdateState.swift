@@ -123,6 +123,7 @@ public enum UpdateState: Equatable {
         case (.installing(let lInstall), .installing(let rInstall)):
             return lInstall.isAutoUpdate == rInstall.isAutoUpdate
                 && lInstall.relaunchBlockers == rInstall.relaunchBlockers
+                && lInstall.holdMode == rInstall.holdMode
                 && (lInstall.updateWhenClear == nil) == (rInstall.updateWhenClear == nil)
         default:
             return false
@@ -338,8 +339,10 @@ public enum UpdateState: Equatable {
         /// these agents or commands. `retryTerminatingApplication` installs now anyway and
         /// `dismiss` defers the install.
         public var relaunchBlockers: UpdateRelaunchBlockers?
-        /// Set while the user is asked what to do about risky agents: switches the hold to
-        /// relaunching as soon as they finish.
+        /// What a held relaunch (``relaunchBlockers`` set) is waiting for.
+        public var holdMode: UpdateRelaunchHoldMode
+        /// Set while an agent is working and the hold does not already wait for them: switches
+        /// the hold to relaunching as soon as no agent is working.
         public var updateWhenClear: (() -> Void)?
 
         /// Creates the payload.
@@ -347,11 +350,13 @@ public enum UpdateState: Equatable {
                     retryTerminatingApplication: @escaping () -> Void,
                     dismiss: @escaping () -> Void,
                     relaunchBlockers: UpdateRelaunchBlockers? = nil,
+                    holdMode: UpdateRelaunchHoldMode = .quietMoment,
                     updateWhenClear: (() -> Void)? = nil) {
             self.isAutoUpdate = isAutoUpdate
             self.retryTerminatingApplication = retryTerminatingApplication
             self.dismiss = dismiss
             self.relaunchBlockers = relaunchBlockers
+            self.holdMode = holdMode
             self.updateWhenClear = updateWhenClear
         }
     }

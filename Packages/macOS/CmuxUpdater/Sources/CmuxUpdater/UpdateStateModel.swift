@@ -367,7 +367,7 @@ public final class UpdateStateModel {
             return String(localized: "update.preparingUpdate", defaultValue: "Extracting and preparing the update")
         case let .installing(install):
             if let blockers = install.relaunchBlockers {
-                return Self.relaunchBlockersDescription(blockers, askingUser: install.updateWhenClear != nil)
+                return Self.relaunchBlockersDescription(blockers, holdMode: install.holdMode)
             }
             return String(localized: "update.restartToComplete", defaultValue: "Restart to Complete Update")
         case .notFound:
@@ -398,31 +398,25 @@ public final class UpdateStateModel {
         }
     }
 
-    /// Summarizes a held relaunch for the popover, above its list of agents. `askingUser` is
-    /// set when the user asked to install and risky agents need their say-so.
+    /// Summarizes a held relaunch in one sentence for the popover, above its list of agents.
     public nonisolated static func relaunchBlockersDescription(
         _ blockers: UpdateRelaunchBlockers,
-        askingUser: Bool
+        holdMode: UpdateRelaunchHoldMode
     ) -> String {
-        var sentences: [String] = []
-        if blockers.needsConfirmation {
-            sentences.append(askingUser
-                ? String(localized: "update.relaunch.confirmRisky", defaultValue: "Relaunching now stops what these are running.")
-                : String(localized: "update.autoInstall.waitingRisky", defaultValue: "Installs after these finish and you step away."))
-        } else {
-            sentences.append(String(
-                localized: "update.autoInstall.waitingQuiet",
-                defaultValue: "Installs the next time you step away for a minute. Workspaces and agents resume where they left off."
-            ))
+        switch holdMode {
+        case .waitingForAgents:
+            return String(localized: "update.relaunch.waitingForAgents", defaultValue: "Updates when your agents finish.")
+        case .askingUser where blockers.needsConfirmation:
+            return String(localized: "update.relaunch.confirmRisky", defaultValue: "Relaunching now stops what these are running.")
+        case .askingUser, .quietMoment:
+            if blockers.needsConfirmation {
+                return String(localized: "update.autoInstall.waitingRisky", defaultValue: "Installs after these finish and you step away.")
+            }
+            return String(
+                localized: "update.autoInstall.waitingQuietShort",
+                defaultValue: "Installs when you step away. Everything resumes where it left off."
+            )
         }
-        let careCount = blockers.careAgents.count
-        if careCount > 0 {
-            sentences.append(String(
-                localized: "update.relaunch.resumesMidTask",
-                defaultValue: "\(careCount) agents will be resumed mid-task."
-            ))
-        }
-        return sentences.joined(separator: " ")
     }
 
     /// The label for the running-commands row of a held relaunch.
