@@ -69,7 +69,7 @@ struct UpdateErrorView: View {
                 .frame(maxHeight: 300)
             }
 
-            HStack(spacing: 8) {
+            UpdatePopoverButtonRow {
                 Button(String(localized: "common.copyDetails", defaultValue: "Copy Details")) {
                     actions.copyUpdateDetails(details)
                 }
@@ -81,9 +81,7 @@ struct UpdateErrorView: View {
                 }
                 .keyboardShortcut(.cancelAction)
                 .controlSize(.small)
-
-                Spacer()
-
+            } trailing: {
                 Button(String(localized: "common.retry", defaultValue: "Retry")) {
                     error.retry()
                     dismiss()

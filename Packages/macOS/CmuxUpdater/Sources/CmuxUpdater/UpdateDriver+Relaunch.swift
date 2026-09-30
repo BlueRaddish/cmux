@@ -73,7 +73,7 @@ extension UpdateDriver {
     }
 
     /// Holds the relaunch in `mode` (see ``UpdateRelaunchGate``). Later leaves the downloaded
-    /// update on "Restart to Complete Update"; Sparkle still installs it when cmux quits.
+    /// update on "Restart to Update"; Sparkle still installs it when cmux quits.
     private func holdRelaunch(mode: UpdateRelaunchGate.Mode, install: @escaping () -> Void) {
         let once = InstallOnce(install)
         relaunchGate.hold(

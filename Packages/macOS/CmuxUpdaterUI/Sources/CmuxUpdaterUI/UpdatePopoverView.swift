@@ -76,7 +76,17 @@ public struct UpdatePopoverView: View {
                 )
             }
         }
-        .frame(width: 300)
+        .frame(width: Self.width(for: model.effectiveState))
+    }
+
+    /// The one width owner for every popover state. A child view that set its own wider frame
+    /// inside a narrower fixed body frame was centered and cut off on both edges.
+    static func width(for state: UpdateState) -> CGFloat {
+        if case .installing(let installing) = state, installing.relaunchBlockers != nil {
+            // Held relaunches list agents with their activity, which needs the extra room.
+            return 340
+        }
+        return 300
     }
 }
 
@@ -159,15 +169,13 @@ private struct DetectedBackgroundUpdateView: View {
                     UpdateMetadataView(item: item, labelWidth: labelWidth)
                 }
 
-                HStack(spacing: 8) {
+                UpdatePopoverButtonRow {
                     Button(String(localized: "common.later", defaultValue: "Later")) {
                         dismiss()
                     }
                     .controlSize(.small)
                     .keyboardShortcut(.cancelAction)
-
-                    Spacer()
-
+                } trailing: {
                     Button(String(localized: "common.installAndRelaunch", defaultValue: "Install and Relaunch")) {
                         actions.attemptUpdate()
                         dismiss()
@@ -232,7 +240,7 @@ private struct PermissionRequestView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            HStack(spacing: 8) {
+            UpdatePopoverButtonRow {
                 Button(String(localized: "common.notNow", defaultValue: "Not Now")) {
                     request.reply(SUUpdatePermissionResponse(
                         automaticUpdateChecks: false,
@@ -241,9 +249,7 @@ private struct PermissionRequestView: View {
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
-
-                Spacer()
-
+            } trailing: {
                 Button(String(localized: "common.allow", defaultValue: "Allow")) {
                     request.reply(SUUpdatePermissionResponse(
                         automaticUpdateChecks: true,
@@ -303,7 +309,7 @@ private struct UpdateAvailableView: View {
                     UpdateMetadataView(item: update.appcastItem, labelWidth: labelWidth)
                 }
 
-                HStack(spacing: 8) {
+                UpdatePopoverButtonRow {
                     Button(String(localized: "common.skip", defaultValue: "Skip")) {
                         update.reply(.skip)
                         dismiss()
@@ -316,9 +322,7 @@ private struct UpdateAvailableView: View {
                     }
                     .controlSize(.small)
                     .keyboardShortcut(.cancelAction)
-
-                    Spacer()
-
+                } trailing: {
                     Button(String(localized: "common.installAndRelaunch", defaultValue: "Install and Relaunch")) {
                         // Re-resolve to the latest available version at install time instead of
                         // installing the version captured when this prompt was generated, so a
@@ -414,16 +418,14 @@ private struct InstallingView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            HStack {
+            UpdatePopoverButtonRow {
                 Button(String(localized: "common.restartLater", defaultValue: "Restart Later")) {
                     installing.dismiss()
                     dismiss()
                 }
                 .keyboardShortcut(.cancelAction)
                 .controlSize(.small)
-
-                Spacer()
-
+            } trailing: {
                 Button(String(localized: "common.restartNow", defaultValue: "Restart Now")) {
                     installing.retryTerminatingApplication()
                     dismiss()
@@ -476,7 +478,7 @@ private struct WaitingToRelaunchView: View {
                 .accessibilityIdentifier("UpdateRelaunchAgentList")
             }
 
-            HStack {
+            UpdatePopoverButtonRow {
                 Button(isAskingUser
                     ? String(localized: "update.wait", defaultValue: "Wait")
                     : String(localized: "common.later", defaultValue: "Later")) {
@@ -485,9 +487,7 @@ private struct WaitingToRelaunchView: View {
                 }
                 .keyboardShortcut(.cancelAction)
                 .controlSize(.small)
-
-                Spacer()
-
+            } trailing: {
                 if let updateWhenClear = installing.updateWhenClear {
                     Button(String(localized: "update.updateWhenFinished", defaultValue: "Update When These Finish")) {
                         updateWhenClear()
@@ -509,7 +509,6 @@ private struct WaitingToRelaunchView: View {
             }
         }
         .padding(16)
-        .frame(width: 340)
     }
 
     private var sortedAgents: [UpdateRelaunchAgent] {
