@@ -418,14 +418,8 @@ private struct InstallingView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
 
-            UpdatePopoverButtonRow {
-                Button(String(localized: "common.restartLater", defaultValue: "Restart Later")) {
-                    installing.dismiss()
-                    dismiss()
-                }
-                .keyboardShortcut(.cancelAction)
-                .controlSize(.small)
-            } trailing: {
+            HStack {
+                Spacer(minLength: 0)
                 Button(String(localized: "common.restartNow", defaultValue: "Restart Now")) {
                     installing.retryTerminatingApplication()
                     dismiss()
@@ -480,14 +474,10 @@ private struct WaitingToRelaunchView: View {
                 .accessibilityIdentifier("UpdateRelaunchAgentList")
             }
 
-            UpdatePopoverButtonRow {
-                Button(String(localized: "common.later", defaultValue: "Later")) {
-                    installing.dismiss()
-                    dismiss()
-                }
-                .keyboardShortcut(.cancelAction)
-                .controlSize(.small)
-            } trailing: {
+            // Only forward actions: closing the popover (click away or Esc) changes nothing,
+            // which is already "later".
+            HStack(spacing: 8) {
+                Spacer(minLength: 0)
                 if let updateWhenClear = installing.updateWhenClear {
                     // No default-action shortcut on Update Now here: it can stop what agents run.
                     updateNowButton

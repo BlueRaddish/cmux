@@ -339,8 +339,9 @@ public final class UpdateStateModel {
             return "arrow.down.circle"
         case .extracting:
             return "shippingbox"
-        case .installing(let install):
-            return install.relaunchBlockers == nil ? "power.circle" : "hourglass"
+        case .installing:
+            // Update Ready and Restart to Update both finish by restarting cmux.
+            return "arrow.clockwise.circle.fill"
         case .notFound:
             return "info.circle"
         case .error:
