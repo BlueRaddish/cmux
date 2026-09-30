@@ -40,7 +40,7 @@ import Testing
         model.setState(.installing(.init(retryTerminatingApplication: {}, dismiss: {})))
 
         #expect(model.pillPrimaryAction == .restart)
-        #expect(model.text == "Restart to Complete Update")
+        #expect(model.text == "Restart to Update")
     }
 
     /// A relaunch held for a risky agent still needs the user's answer, so the click opens

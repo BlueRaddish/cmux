@@ -291,8 +291,9 @@ public final class UpdateStateModel {
                 return String(localized: "update.readyWaiting", defaultValue: "Update Ready")
             }
             // Sparkle has staged the update and only needs cmux to quit, so the pill names that
-            // action rather than claiming an install is still running.
-            return String(localized: "update.restartToComplete", defaultValue: "Restart to Complete Update")
+            // action rather than claiming an install is still running. Short enough to fit
+            // beside the footer's other buttons.
+            return String(localized: "update.restartToUpdate", defaultValue: "Restart to Update")
         case .notFound:
             return String(localized: "update.noUpdates.title", defaultValue: "No Updates Available")
         case .error(let err):
