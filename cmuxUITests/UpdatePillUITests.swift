@@ -85,7 +85,32 @@ final class UpdatePillUITests: XCTestCase {
         attachScreenshot(name: "passive-detected-update-after-mount")
     }
 
-    func testDetectedBackgroundUpdateFirstClickOpensPopover() {
+    /// One click on the pill installs: it starts the install attempt directly instead of
+    /// opening a popover whose only useful button is Install and Relaunch.
+    func testDetectedBackgroundUpdateClickStartsInstall() {
+        let systemSettings = XCUIApplication(bundleIdentifier: "com.apple.systempreferences")
+        systemSettings.terminate()
+
+        let app = XCUIApplication.cmuxTestApplication()
+        app.launchEnvironment["CMUX_UI_TEST_MODE"] = "1"
+        app.launchEnvironment["CMUX_UI_TEST_DETECTED_UPDATE_VERSION"] = "9.9.9"
+        launchAndActivate(app)
+
+        let pill = pillButton(app: app, expectedLabel: "Update Available: 9.9.9")
+        XCTAssertTrue(pill.waitForExistence(timeout: 6.0))
+        assertVisibleSize(pill)
+
+        pill.click()
+
+        // A DEV build's install attempt resolves to "no update", which proves the click ran it.
+        XCTAssertTrue(
+            pillButton(app: app, expectedLabel: "No Updates Available").waitForExistence(timeout: 10.0),
+            "Expected one click on the update pill to start the install attempt"
+        )
+        XCTAssertFalse(app.buttons["Install and Relaunch"].exists, "The click must not open the details popover")
+    }
+
+    func testDetectedBackgroundUpdateContextMenuShowsDetails() {
         let systemSettings = XCUIApplication(bundleIdentifier: "com.apple.systempreferences")
         systemSettings.terminate()
 
@@ -100,11 +125,14 @@ final class UpdatePillUITests: XCTestCase {
         XCTAssertTrue(pill.waitForExistence(timeout: 6.0))
         assertVisibleSize(pill)
 
-        pill.click()
+        pill.rightClick()
+        let showDetails = app.menuItems["Show Details…"]
+        XCTAssertTrue(showDetails.waitForExistence(timeout: 4.0), "Expected a Show Details… context menu item")
+        showDetails.click()
 
         XCTAssertTrue(
             app.staticTexts["Update Available"].waitForExistence(timeout: 8.0),
-            "Expected the first click on a background-detected update pill to open the popover"
+            "Expected Show Details… to open the update popover"
         )
         XCTAssertTrue(
             app.buttons["Install and Relaunch"].waitForExistence(timeout: 2.0),
@@ -281,7 +309,8 @@ final class UpdatePillUITests: XCTestCase {
         attachScreenshot(name: "update-extracting")
     }
 
-    func testUpdatePillShowsInstallingStateAndRestartPopover() {
+    /// The staged-update pill names the restart it waits for and restarts in one click.
+    func testUpdatePillRestartsStagedUpdateInOneClick() {
         let systemSettings = XCUIApplication(bundleIdentifier: "com.apple.systempreferences")
         systemSettings.terminate()
         let app = XCUIApplication.cmuxTestApplication()
@@ -289,18 +318,18 @@ final class UpdatePillUITests: XCTestCase {
         app.launchEnvironment["CMUX_UI_TEST_UPDATE_STATE"] = "installing"
         launchAndActivate(app)
 
-        let pill = pillButton(app: app, expectedLabel: "Installing…")
+        let pill = pillButton(app: app, expectedLabel: "Restart to Complete Update")
         XCTAssertTrue(pill.waitForExistence(timeout: 6.0))
-        XCTAssertEqual(pill.label, "Installing…")
+        XCTAssertEqual(pill.label, "Restart to Complete Update")
         assertVisibleSize(pill)
-        attachScreenshot(name: "update-installing")
+        attachScreenshot(name: "update-restart-to-complete")
 
         pill.click()
         XCTAssertTrue(
-            app.buttons["Restart Now"].waitForExistence(timeout: 8.0),
-            "Expected the installing popover to offer Restart Now"
+            pollUntil(timeout: 8.0) { !pill.exists },
+            "Expected one click to restart into the staged update"
         )
-        XCTAssertTrue(app.buttons["Restart Later"].waitForExistence(timeout: 2.0), "Expected a Restart Later button")
+        XCTAssertFalse(app.buttons["Restart Later"].exists, "The click must not open the restart popover")
     }
 
     func testUpdatePillShowsErrorStateWithRetryAndDetails() {
