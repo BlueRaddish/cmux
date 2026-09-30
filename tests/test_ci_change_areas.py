@@ -3876,7 +3876,12 @@ def test_linux_failure_still_blocks_tests_after_macos_succeeds() -> None:
         needs["linux-preflight"]["result"] = outcome
         result = run_tests_gate(needs)
         assert result.returncode != 0, outcome
-        assert f"linux preflight did not pass: {outcome}" in result.stderr
+        expected = (
+            "cancelled: linux-preflight"
+            if outcome == "cancelled"
+            else f"linux preflight did not pass: {outcome}"
+        )
+        assert expected in result.stderr
 
 
 def test_macos_status_accepts_compile_only_prior_admission_skip() -> None:
