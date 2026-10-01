@@ -7,7 +7,7 @@ import CmuxNextDaemon
 /// (notification-ack-v1). Acknowledging is the daemon's only transition, so
 /// "mark unread" and "clear ledger" are refused or unavailable.
 enum NotificationHandlers {
-    static let ack = DaemonCapabilities.notificationAck
+    static let ack = DaemonCapabilities.shared.notificationAck
 
     static func bind(into registry: ActionRegistry, context: AppActionContext) {
         let daemon = context.daemon
