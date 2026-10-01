@@ -1,5 +1,5 @@
 /* This file is generated. Do not edit by hand. */
-/* cmux-tui mux protocol 12, IR adbfa89de5ea3e4ee601c468ebe23c608b9eb8532e62701776fa0d86a6831300. */
+/* cmux-tui mux protocol 12, IR 6114c9595eb80294d991289a62f1eab045a80183763ea91266bd70811832e7bc. */
 
 
 import type * as T from "./types.js";
@@ -18,6 +18,12 @@ export type AgentChangedEvent = { event: "agent-changed" } & {
 /** Protocol v5; emission: emitted; streams: subscribe. */
 export type BellEvent = { event: "bell" } & {
   "surface": T.Id;
+};
+
+/** Protocol v12; emission: emitted; streams: subscribe. */
+export type BookmarksChangedEvent = { event: "bookmarks-changed" } & {
+  "bookmarks_revision": bigint;
+  "browser_profile_id": string;
 };
 
 /** Protocol v6; emission: emitted; streams: attach-browser. */
@@ -468,6 +474,7 @@ export interface UnknownEvent {
 export type KnownCmuxEvent =
   | AgentChangedEvent
   | BellEvent
+  | BookmarksChangedEvent
   | BrowserStateEvent
   | ClientAttachedEvent
   | ClientChangedEvent
@@ -529,6 +536,7 @@ export type SerializedButNotEmittedEvent =
 export type KnownSubscribeEvent =
   | AgentChangedEvent
   | BellEvent
+  | BookmarksChangedEvent
   | ClientAttachedEvent
   | ClientChangedEvent
   | ClientDetachedEvent

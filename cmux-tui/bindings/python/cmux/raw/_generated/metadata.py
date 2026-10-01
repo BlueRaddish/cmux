@@ -8,7 +8,7 @@ from typing import Mapping, Optional, Tuple
 
 SCHEMA_VERSION = 2
 MUX_PROTOCOL = 12
-IR_SHA256 = 'adbfa89de5ea3e4ee601c468ebe23c608b9eb8532e62701776fa0d86a6831300'
+IR_SHA256 = '6114c9595eb80294d991289a62f1eab045a80183763ea91266bd70811832e7bc'
 
 
 @dataclass(frozen=True)
@@ -450,6 +450,26 @@ COMMANDS = {
             'surface': CommandFieldMetadata(None, None),
         },
     ),
+    'create-bookmark': CommandMetadata(
+        'create-bookmark',
+        'control',
+        12,
+        'bookmarks-v1',
+        ('control', 'frontend', 'local-admin', 'provider-authority'),
+        None,
+        {
+            'bookmark': CommandFieldMetadata(None, None),
+            'browser_profile_id': CommandFieldMetadata(None, None),
+            'created_ms': CommandFieldMetadata(None, None),
+            'favicon_key': CommandFieldMetadata(None, None),
+            'index': CommandFieldMetadata(None, None),
+            'kind': CommandFieldMetadata(None, None),
+            'parent': CommandFieldMetadata(None, None),
+            'source_key': CommandFieldMetadata(None, None),
+            'title': CommandFieldMetadata(None, None),
+            'url': CommandFieldMetadata(None, None),
+        },
+    ),
     'create-browser-profile': CommandMetadata(
         'create-browser-profile',
         'control',
@@ -609,6 +629,17 @@ COMMANDS = {
             'group': CommandFieldMetadata(None, None),
             'index': CommandFieldMetadata(None, None),
             'name': CommandFieldMetadata(None, None),
+        },
+    ),
+    'delete-bookmark': CommandMetadata(
+        'delete-bookmark',
+        'control',
+        12,
+        'bookmarks-v1',
+        ('control', 'frontend', 'local-admin', 'provider-authority'),
+        None,
+        {
+            'bookmark': CommandFieldMetadata(None, None),
         },
     ),
     'delete-browser-profile': CommandMetadata(
@@ -814,6 +845,22 @@ COMMANDS = {
             'kind': CommandFieldMetadata(None, None),
         },
     ),
+    'import-bookmarks': CommandMetadata(
+        'import-bookmarks',
+        'control',
+        12,
+        'bookmarks-v1',
+        ('control', 'frontend', 'local-admin', 'provider-authority'),
+        None,
+        {
+            'browser_profile_id': CommandFieldMetadata(None, None),
+            'index': CommandFieldMetadata(None, None),
+            'nodes': CommandFieldMetadata(None, None),
+            'parent': CommandFieldMetadata(None, None),
+            'replace': CommandFieldMetadata(None, None),
+            'source_key': CommandFieldMetadata(None, None),
+        },
+    ),
     'import-session-organization': CommandMetadata(
         'import-session-organization',
         'control',
@@ -848,6 +895,17 @@ COMMANDS = {
         {
             'state': CommandFieldMetadata(None, None),
             'surface': CommandFieldMetadata(None, None),
+        },
+    ),
+    'list-bookmarks': CommandMetadata(
+        'list-bookmarks',
+        'control',
+        12,
+        'bookmarks-v1',
+        ('control', 'frontend', 'local-admin', 'provider-authority'),
+        None,
+        {
+            'browser_profile_id': CommandFieldMetadata(None, None),
         },
     ),
     'list-clients': CommandMetadata(
@@ -994,6 +1052,19 @@ COMMANDS = {
         {
             'terminal': CommandFieldMetadata(None, None),
             'ttl_ms': CommandFieldMetadata(None, None),
+        },
+    ),
+    'move-bookmark': CommandMetadata(
+        'move-bookmark',
+        'control',
+        12,
+        'bookmarks-v1',
+        ('control', 'frontend', 'local-admin', 'provider-authority'),
+        None,
+        {
+            'bookmark': CommandFieldMetadata(None, None),
+            'index': CommandFieldMetadata(None, None),
+            'parent': CommandFieldMetadata(None, None),
         },
     ),
     'move-browser-profile': CommandMetadata(
@@ -2332,6 +2403,21 @@ COMMANDS = {
             'group': CommandFieldMetadata(None, None),
         },
     ),
+    'update-bookmark': CommandMetadata(
+        'update-bookmark',
+        'control',
+        12,
+        'bookmarks-v1',
+        ('control', 'frontend', 'local-admin', 'provider-authority'),
+        None,
+        {
+            'bookmark': CommandFieldMetadata(None, None),
+            'favicon_key': CommandFieldMetadata(None, None),
+            'last_used_ms': CommandFieldMetadata(None, None),
+            'title': CommandFieldMetadata(None, None),
+            'url': CommandFieldMetadata(None, None),
+        },
+    ),
     'update-browser-profile': CommandMetadata(
         'update-browser-profile',
         'control',
@@ -2522,6 +2608,7 @@ COMMANDS = {
 EVENTS = {
     'agent-changed': EventMetadata('agent-changed', 11, None, ('subscribe',), 'emitted'),
     'bell': EventMetadata('bell', 5, None, ('subscribe',), 'emitted'),
+    'bookmarks-changed': EventMetadata('bookmarks-changed', 12, 'bookmarks-v1', ('subscribe',), 'emitted'),
     'browser-state': EventMetadata('browser-state', 6, None, ('attach-browser',), 'emitted'),
     'client-attached': EventMetadata('client-attached', 6, None, ('subscribe',), 'emitted'),
     'client-changed': EventMetadata('client-changed', 6, None, ('subscribe',), 'emitted'),

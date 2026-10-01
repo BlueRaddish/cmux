@@ -1,10 +1,10 @@
 /* This file is generated. Do not edit by hand. */
-/* cmux-tui mux protocol 12, IR adbfa89de5ea3e4ee601c468ebe23c608b9eb8532e62701776fa0d86a6831300. */
+/* cmux-tui mux protocol 12, IR 6114c9595eb80294d991289a62f1eab045a80183763ea91266bd70811832e7bc. */
 
 
 export const SDK_SCHEMA_VERSION = 2 as const;
 export const MUX_PROTOCOL_VERSION = 12 as const;
-export const SDK_IR_SHA256 = "adbfa89de5ea3e4ee601c468ebe23c608b9eb8532e62701776fa0d86a6831300" as const;
+export const SDK_IR_SHA256 = "6114c9595eb80294d991289a62f1eab045a80183763ea91266bd70811832e7bc" as const;
 export const PROTOCOL = {
   "id_type": "uint64",
   "javascript_id_policy": "All protocol identifiers are uint64 JSON numbers. JavaScript and TypeScript SDKs must decode them losslessly as bigint (or validated decimal strings at their public boundary), and must not expose IEEE-754 number ids. Pairing request ids, revisions, timestamps, frame sequences, and reservation ids follow the same rule.",
@@ -456,6 +456,16 @@ export const COMMAND_METADATA = {
       "PTY surfaces only."
     ]
   },
+  "create-bookmark": {
+    "authority": "control",
+    "since": 12,
+    "capability": "bookmarks-v1",
+    "fields": {},
+    "stream": null,
+    "constraints": [
+      "See spec/commands.md for the result object."
+    ]
+  },
   "create-browser-profile": {
     "authority": "control",
     "since": 12,
@@ -561,6 +571,16 @@ export const COMMAND_METADATA = {
     "authority": "control",
     "since": 12,
     "capability": "workspace-groups-v1",
+    "fields": {},
+    "stream": null,
+    "constraints": [
+      "See spec/commands.md for the result object."
+    ]
+  },
+  "delete-bookmark": {
+    "authority": "control",
+    "since": 12,
+    "capability": "bookmarks-v1",
     "fields": {},
     "stream": null,
     "constraints": [
@@ -745,6 +765,16 @@ export const COMMAND_METADATA = {
       "Short ids are snapshot-local labels; command parameters accept numeric ids only."
     ]
   },
+  "import-bookmarks": {
+    "authority": "control",
+    "since": 12,
+    "capability": "bookmarks-v1",
+    "fields": {},
+    "stream": null,
+    "constraints": [
+      "See spec/commands.md for the result object."
+    ]
+  },
   "import-session-organization": {
     "authority": "control",
     "since": 12,
@@ -772,6 +802,16 @@ export const COMMAND_METADATA = {
     "fields": {},
     "stream": null,
     "constraints": []
+  },
+  "list-bookmarks": {
+    "authority": "control",
+    "since": 12,
+    "capability": "bookmarks-v1",
+    "fields": {},
+    "stream": null,
+    "constraints": [
+      "See spec/commands.md for the result object."
+    ]
   },
   "list-clients": {
     "authority": "control",
@@ -903,6 +943,16 @@ export const COMMAND_METADATA = {
     "stream": null,
     "constraints": [
       "The terminal resource ID is resolved atomically to the live terminal-host-backed PTY before minting a one-use renderer credential."
+    ]
+  },
+  "move-bookmark": {
+    "authority": "control",
+    "since": 12,
+    "capability": "bookmarks-v1",
+    "fields": {},
+    "stream": null,
+    "constraints": [
+      "See spec/commands.md for the result object."
     ]
   },
   "move-browser-profile": {
@@ -2156,6 +2206,16 @@ export const COMMAND_METADATA = {
       "See spec/commands.md for the result object."
     ]
   },
+  "update-bookmark": {
+    "authority": "control",
+    "since": 12,
+    "capability": "bookmarks-v1",
+    "fields": {},
+    "stream": null,
+    "constraints": [
+      "See spec/commands.md for the result object."
+    ]
+  },
   "update-browser-profile": {
     "authority": "control",
     "since": 12,
@@ -2314,6 +2374,14 @@ export const EVENT_METADATA = {
   "bell": {
     "since": 5,
     "capability": null,
+    "streams": [
+      "subscribe"
+    ],
+    "emission": "emitted"
+  },
+  "bookmarks-changed": {
+    "since": 12,
+    "capability": "bookmarks-v1",
     "streams": [
       "subscribe"
     ],
@@ -10102,6 +10170,104 @@ export const COMMAND_SCHEMAS: Readonly<Record<string, CommandSchema>> = {
       "name": "CopyResult"
     }
   },
+  "create-bookmark": {
+    "request": {
+      "additional_properties": false,
+      "fields": {
+        "bookmark": {
+          "default": null,
+          "nullable": true,
+          "presence": "optional",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        },
+        "browser_profile_id": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        },
+        "created_ms": {
+          "default": null,
+          "nullable": true,
+          "presence": "optional",
+          "type": {
+            "kind": "scalar",
+            "name": "uint64"
+          }
+        },
+        "favicon_key": {
+          "default": null,
+          "nullable": true,
+          "presence": "optional",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        },
+        "index": {
+          "default": null,
+          "nullable": true,
+          "presence": "optional",
+          "type": {
+            "kind": "scalar",
+            "name": "uint64"
+          }
+        },
+        "kind": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        },
+        "parent": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        },
+        "source_key": {
+          "default": null,
+          "nullable": true,
+          "presence": "optional",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        },
+        "title": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        },
+        "url": {
+          "default": null,
+          "nullable": true,
+          "presence": "optional",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        }
+      },
+      "kind": "object"
+    },
+    "result": {
+      "kind": "ref",
+      "name": "JsonValue"
+    }
+  },
   "create-browser-profile": {
     "request": {
       "additional_properties": false,
@@ -10916,6 +11082,26 @@ export const COMMAND_SCHEMAS: Readonly<Record<string, CommandSchema>> = {
       "name": "JsonValue"
     }
   },
+  "delete-bookmark": {
+    "request": {
+      "additional_properties": false,
+      "fields": {
+        "bookmark": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        }
+      },
+      "kind": "object"
+    },
+    "result": {
+      "kind": "ref",
+      "name": "JsonValue"
+    }
+  },
   "delete-browser-profile": {
     "request": {
       "additional_properties": false,
@@ -11339,6 +11525,72 @@ export const COMMAND_SCHEMAS: Readonly<Record<string, CommandSchema>> = {
       "name": "IdsResult"
     }
   },
+  "import-bookmarks": {
+    "request": {
+      "additional_properties": false,
+      "fields": {
+        "browser_profile_id": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        },
+        "index": {
+          "default": null,
+          "nullable": true,
+          "presence": "optional",
+          "type": {
+            "kind": "scalar",
+            "name": "uint64"
+          }
+        },
+        "nodes": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "items": {
+              "kind": "ref",
+              "name": "JsonValue"
+            },
+            "kind": "array"
+          }
+        },
+        "parent": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        },
+        "replace": {
+          "default": false,
+          "nullable": false,
+          "presence": "optional",
+          "type": {
+            "kind": "scalar",
+            "name": "boolean"
+          }
+        },
+        "source_key": {
+          "default": null,
+          "nullable": true,
+          "presence": "optional",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        }
+      },
+      "kind": "object"
+    },
+    "result": {
+      "kind": "ref",
+      "name": "JsonValue"
+    }
+  },
   "import-session-organization": {
     "request": {
       "additional_properties": false,
@@ -11441,6 +11693,26 @@ export const COMMAND_SCHEMAS: Readonly<Record<string, CommandSchema>> = {
     "result": {
       "kind": "ref",
       "name": "ListAgentsResult"
+    }
+  },
+  "list-bookmarks": {
+    "request": {
+      "additional_properties": false,
+      "fields": {
+        "browser_profile_id": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        }
+      },
+      "kind": "object"
+    },
+    "result": {
+      "kind": "ref",
+      "name": "JsonValue"
     }
   },
   "list-clients": {
@@ -11670,6 +11942,42 @@ export const COMMAND_SCHEMAS: Readonly<Record<string, CommandSchema>> = {
     "result": {
       "kind": "ref",
       "name": "MintTerminalRendererResult"
+    }
+  },
+  "move-bookmark": {
+    "request": {
+      "additional_properties": false,
+      "fields": {
+        "bookmark": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        },
+        "index": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "kind": "scalar",
+            "name": "uint64"
+          }
+        },
+        "parent": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        }
+      },
+      "kind": "object"
+    },
+    "result": {
+      "kind": "ref",
+      "name": "JsonValue"
     }
   },
   "move-browser-profile": {
@@ -16362,6 +16670,62 @@ export const COMMAND_SCHEMAS: Readonly<Record<string, CommandSchema>> = {
       "name": "JsonValue"
     }
   },
+  "update-bookmark": {
+    "request": {
+      "additional_properties": false,
+      "fields": {
+        "bookmark": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        },
+        "favicon_key": {
+          "default": null,
+          "nullable": true,
+          "presence": "optional",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        },
+        "last_used_ms": {
+          "default": null,
+          "nullable": true,
+          "presence": "optional",
+          "type": {
+            "kind": "scalar",
+            "name": "uint64"
+          }
+        },
+        "title": {
+          "default": null,
+          "nullable": true,
+          "presence": "optional",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        },
+        "url": {
+          "default": null,
+          "nullable": true,
+          "presence": "optional",
+          "type": {
+            "kind": "scalar",
+            "name": "string"
+          }
+        }
+      },
+      "kind": "object"
+    },
+    "result": {
+      "kind": "ref",
+      "name": "JsonValue"
+    }
+  },
   "update-browser-profile": {
     "request": {
       "additional_properties": false,
@@ -17014,6 +17378,36 @@ export const EVENT_SCHEMAS: Readonly<Record<string, TypeSchema>> = {
         "type": {
           "kind": "ref",
           "name": "Id"
+        }
+      }
+    },
+    "kind": "object"
+  },
+  "bookmarks-changed": {
+    "additional_properties": false,
+    "fields": {
+      "bookmarks_revision": {
+        "nullable": false,
+        "presence": "required",
+        "type": {
+          "kind": "scalar",
+          "name": "uint64"
+        }
+      },
+      "browser_profile_id": {
+        "nullable": false,
+        "presence": "required",
+        "type": {
+          "kind": "scalar",
+          "name": "string"
+        }
+      },
+      "event": {
+        "nullable": false,
+        "presence": "required",
+        "type": {
+          "kind": "literal",
+          "value": "bookmarks-changed"
         }
       }
     },

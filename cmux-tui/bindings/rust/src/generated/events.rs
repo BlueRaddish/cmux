@@ -1,5 +1,5 @@
 // This file is generated. Do not edit by hand.
-// cmux-tui mux protocol 12, IR adbfa89de5ea3e4ee601c468ebe23c608b9eb8532e62701776fa0d86a6831300.
+// cmux-tui mux protocol 12, IR 6114c9595eb80294d991289a62f1eab045a80183763ea91266bd70811832e7bc.
 // The emitter owns this layout so generation is independent of the installed rustfmt.
 
 use super::metadata::*;
@@ -26,6 +26,13 @@ pub struct AgentChangedEvent {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct BellEvent {
     pub surface: T::Id,
+}
+
+#[rustfmt::skip]
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct BookmarksChangedEvent {
+    pub bookmarks_revision: u64,
+    pub browser_profile_id: String,
 }
 
 #[rustfmt::skip]
@@ -616,6 +623,7 @@ pub struct UnknownEvent {
 pub enum Event {
     AgentChanged(AgentChangedEvent),
     Bell(BellEvent),
+    BookmarksChanged(BookmarksChangedEvent),
     BrowserState(BrowserStateEvent),
     ClientAttached(ClientAttachedEvent),
     ClientChanged(ClientChangedEvent),
@@ -678,6 +686,7 @@ impl Event {
         match self {
             Self::AgentChanged(_) => Some("agent-changed"),
             Self::Bell(_) => Some("bell"),
+            Self::BookmarksChanged(_) => Some("bookmarks-changed"),
             Self::BrowserState(_) => Some("browser-state"),
             Self::ClientAttached(_) => Some("client-attached"),
             Self::ClientChanged(_) => Some("client-changed"),
@@ -739,6 +748,7 @@ impl Event {
         match self {
             Self::AgentChanged(_) => Some(&AGENT_CHANGED_EVENT_METADATA),
             Self::Bell(_) => Some(&BELL_EVENT_METADATA),
+            Self::BookmarksChanged(_) => Some(&BOOKMARKS_CHANGED_EVENT_METADATA),
             Self::BrowserState(_) => Some(&BROWSER_STATE_EVENT_METADATA),
             Self::ClientAttached(_) => Some(&CLIENT_ATTACHED_EVENT_METADATA),
             Self::ClientChanged(_) => Some(&CLIENT_CHANGED_EVENT_METADATA),
@@ -811,6 +821,14 @@ pub fn decode_event(raw: Value) -> Event {
         },
         Some("bell") => match serde_json::from_value::<BellEvent>(raw.clone()) {
             Ok(event) => Event::Bell(event),
+            Err(error) => Event::Unknown(UnknownEvent {
+                name,
+                raw,
+                decode_error: Some(error.to_string()),
+            }),
+        },
+        Some("bookmarks-changed") => match serde_json::from_value::<BookmarksChangedEvent>(raw.clone()) {
+            Ok(event) => Event::BookmarksChanged(event),
             Err(error) => Event::Unknown(UnknownEvent {
                 name,
                 raw,
