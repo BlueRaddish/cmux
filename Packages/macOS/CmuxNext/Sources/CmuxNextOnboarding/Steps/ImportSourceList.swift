@@ -8,6 +8,8 @@ final class ImportSourceList: NSView {
     private let model: ImportStepModel
     private let stack = NSStackView()
     private var checks: [String: CheckRowView] = [:]
+    /// Per-profile kind chips, shown under a selected profile.
+    private var kindRows: [String: (row: NSStackView, chips: [ImportDataKind: ChipToggle], profile: BrowserSourceProfile)] = [:]
     private var shownSources: [BrowserSource] = []
     private var loop: RenderLoop?
     private var scrollFit: ScrollFitElasticity?
@@ -57,11 +59,20 @@ final class ImportSourceList: NSView {
             row.isChecked = model.selectedProfiles.contains(id)
             row.isEnabled = editable && row.hasData
         }
+        for (id, entry) in kindRows {
+            entry.row.isHidden = !model.selectedProfiles.contains(id)
+            let kinds = model.kinds(for: entry.profile)
+            for (kind, chip) in entry.chips {
+                chip.isOn = kinds.contains(kind)
+                chip.isEnabled = editable
+            }
+        }
     }
 
     private func rebuild(_ sources: [BrowserSource], detecting: Bool) {
         stack.arrangedSubviews.forEach { $0.removeFromSuperview() }
         checks = [:]
+        kindRows = [:]
         guard !sources.isEmpty else {
             let text = detecting || model.phase == .idle ? OnboardingStrings.detecting : OnboardingStrings.noBrowsers
             stack.addArrangedSubview(OnboardingLabel.make(text, font: Typography.body, color: Palette.textTertiary))
@@ -86,10 +97,29 @@ final class ImportSourceList: NSView {
                     checks[profile.id] = row
                     stack.addArrangedSubview(row)
                     row.widthAnchor.constraint(equalTo: stack.widthAnchor).isActive = true
+                    if !kinds.isEmpty { addKindRow(for: profile, kinds: kinds) }
                 }
             }
             if let last = stack.arrangedSubviews.last { stack.setCustomSpacing(Metrics.space6, after: last) }
         }
+    }
+}
+
+extension ImportSourceList {
+    /// Small chips under a selected profile: what to bring from this one.
+    fileprivate func addKindRow(for profile: BrowserSourceProfile, kinds: [ImportDataKind]) {
+        var chips: [ImportDataKind: ChipToggle] = [:]
+        let row = NSStackView()
+        row.spacing = Metrics.space2
+        row.edgeInsets = NSEdgeInsets(top: 0, left: Metrics.space6 * 2, bottom: Metrics.space2, right: 0)
+        for kind in kinds {
+            let chip = ChipToggle(title: OnboardingStrings.kind(kind), small: true)
+            chip.onToggle = { [weak model] in model?.toggle(kind, for: profile) }
+            chips[kind] = chip
+            row.addArrangedSubview(chip)
+        }
+        kindRows[profile.id] = (row, chips, profile)
+        stack.addArrangedSubview(row)
     }
 }
 

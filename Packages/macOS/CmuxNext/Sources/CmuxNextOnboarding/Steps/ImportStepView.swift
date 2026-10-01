@@ -73,22 +73,22 @@ final class ChipToggle: SelectableCard {
     var isEnabled = true { didSet { alphaValue = isEnabled ? 1 : 0.45 } }
     private let glyph = NSImageView()
 
-    init(title: String) {
+    init(title: String, small: Bool = false) {
         super.init(frame: .zero)
         glyph.image = NSImage(systemSymbolName: "checkmark", accessibilityDescription: nil)?
             .withSymbolConfiguration(.init(pointSize: Metrics.smallIconSize - 2, weight: .semibold))
         glyph.contentTintColor = Palette.textPrimary
         glyph.isHidden = true
-        let label = OnboardingLabel.make(title, font: Typography.body)
+        let label = OnboardingLabel.make(title, font: small ? Typography.caption : Typography.body)
         let stack = NSStackView(views: [glyph, label])
         stack.spacing = Metrics.space2
         stack.translatesAutoresizingMaskIntoConstraints = false
         addSubview(stack)
         NSLayoutConstraint.activate([
-            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: Metrics.space5),
-            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Metrics.space5),
+            stack.leadingAnchor.constraint(equalTo: leadingAnchor, constant: small ? Metrics.space4 : Metrics.space5),
+            stack.trailingAnchor.constraint(equalTo: trailingAnchor, constant: small ? -Metrics.space4 : -Metrics.space5),
             stack.centerYAnchor.constraint(equalTo: centerYAnchor),
-            heightAnchor.constraint(equalToConstant: OnboardingMetrics.buttonHeight),
+            heightAnchor.constraint(equalToConstant: small ? OnboardingMetrics.buttonHeight - Metrics.space3 : OnboardingMetrics.buttonHeight),
         ])
         setAccessibilityRole(.checkBox)
         setAccessibilityLabel(title)

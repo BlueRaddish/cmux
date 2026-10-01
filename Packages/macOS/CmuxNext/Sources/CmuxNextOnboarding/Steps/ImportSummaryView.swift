@@ -38,6 +38,7 @@ final class ImportCountsView: NSStackView {
 final class ImportSummaryView: NSView {
     private let model: ImportStepModel
     private let openTabs = OnboardingButton(OnboardingStrings.openTabsNow, style: .secondary)
+    private let installAll = OnboardingButton(OnboardingStrings.installAll, style: .secondary)
     private let list = NSStackView()
     private let listScroll = NSScrollView()
     private let extensionsHeader = OnboardingLabel.make(OnboardingStrings.extensionsTitle, font: Typography.header, color: Palette.textSecondary)
@@ -53,6 +54,7 @@ final class ImportSummaryView: NSView {
         super.init(frame: .zero)
         translatesAutoresizingMaskIntoConstraints = false
         openTabs.onPress = { [weak model] in model?.openImportedTabs() }
+        installAll.onPress = { [weak model] in model?.installAllExtensions() }
         list.orientation = .vertical
         list.alignment = .leading
         list.spacing = Metrics.space2
@@ -67,7 +69,8 @@ final class ImportSummaryView: NSView {
         listScroll.autohidesScrollers = true
         listScroll.scrollerStyle = .overlay
         listScroll.translatesAutoresizingMaskIntoConstraints = false
-        let tabsRow = NSStackView(views: [openTabs, FlexibleSpace()])
+        let tabsRow = NSStackView(views: [openTabs, installAll, FlexibleSpace()])
+        tabsRow.spacing = Metrics.space4
         let stack = NSStackView(views: [tabsRow, extensionsHeader, extensionsDetail, listScroll])
         stack.orientation = .vertical
         stack.alignment = .leading
@@ -97,6 +100,11 @@ final class ImportSummaryView: NSView {
         openTabs.title = model.tabsOpened ? OnboardingStrings.tabsOpened : OnboardingStrings.openTabsNow
         openTabs.isEnabled = !model.tabsOpened
         let extensions = summary.extensions
+        let installed = extensions.filter { model.installedExtensions.contains($0.id) }.count
+        installAll.isHidden = extensions.isEmpty
+        installAll.isEnabled = !model.installingAll
+        installAll.title = model.installingAll ? OnboardingStrings.installedCount(installed, extensions.count)
+            : OnboardingStrings.installAllCount(extensions.count)
         extensionsHeader.isHidden = extensions.isEmpty
         extensionsDetail.isHidden = extensions.isEmpty
         listScroll.isHidden = extensions.isEmpty
@@ -122,7 +130,8 @@ final class ImportSummaryView: NSView {
         }
         for (id, button) in buttons {
             let requested = model.installRequested.contains(id)
-            button.title = requested ? OnboardingStrings.opened : OnboardingStrings.install
+            let done = model.installedExtensions.contains(id)
+            button.title = done ? OnboardingStrings.installed : (requested ? OnboardingStrings.opened : OnboardingStrings.install)
             button.style = requested ? .plain : .secondary
         }
     }

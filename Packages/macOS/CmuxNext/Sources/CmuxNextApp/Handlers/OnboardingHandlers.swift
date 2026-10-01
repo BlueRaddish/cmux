@@ -10,8 +10,8 @@ enum OnboardingHandlers {
     static func bind(into registry: ActionRegistry, context: AppActionContext) {
         let services = context.services
         registry.bind("palette.welcomeChecklist", run: { _ in services.onboarding.show() })
-        registry.bind("importFromBrowser", run: { _ in services.onboarding.show(step: .importData) })
-        registry.bind("palette.makeDefaultTerminal", run: { _ in services.onboarding.show(step: .defaultTerminal) })
+        registry.bind("importFromBrowser", run: { _ in services.onboarding.show(step: .browser) })
+        registry.bind("palette.makeDefaultTerminal", run: { _ in services.onboarding.show(step: .workflow) })
         registry.bind("palette.makeDefaultBrowser", run: { _ in
             let apps = services.onboarding.defaultApps
             registry.track(Task { @MainActor in

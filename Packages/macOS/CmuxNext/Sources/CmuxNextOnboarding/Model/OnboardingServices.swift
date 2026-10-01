@@ -1,3 +1,4 @@
+public import AppKit
 public import CmuxNextBrowserImport
 public import CmuxNextDesign
 public import Foundation
@@ -18,12 +19,33 @@ public protocol OnboardingServices: AnyObject {
     /// Writes the theme (nil: back to the Ghostty config) and density.
     func applyAppearance(themeName: String?, density: Density)
 
+    /// Monospaced font families installed on this Mac (for the terminal font).
+    func loadMonospacedFonts() async -> [String]
+
+    // Settings (cmux.json) and actions
+    /// The value at `path` in cmux.json now, nil when unset.
+    func setting(_ path: [String]) -> OnboardingValue?
+    /// Writes (nil: removes) the value at `path`; applies live.
+    func setSetting(_ path: [String], _ value: OnboardingValue?)
+    /// The action's shortcut from the registry's defaults, for display.
+    func defaultShortcutDisplay(for actionID: String) -> String?
+    /// Runs a registered action (Connect to Machine, New Cloud Machine...).
+    func runAction(_ actionID: String)
+    func isActionAvailable(_ actionID: String) -> Bool
+    /// Whether the App supplies the accounts step (`makeAccountsStepView`).
+    var hasAccountsStep: Bool { get }
+    /// The accounts step's body (the accounts feature's view), or nil.
+    func makeAccountsStepView() -> NSView?
+
     // Import
     func detectBrowsers() async -> [BrowserSource]
     func runImport(_ plan: ImportPlan, progress: @escaping @MainActor (ImportProgress) -> Void) async throws -> ImportSummary
     /// Opens the extension's Chrome Web Store page in a Chromium tab, where
     /// one click installs it.
     func installExtension(_ item: ImportedExtension)
+    /// Opens the store pages of `items` in Chromium tabs of `profileID`, in
+    /// the background, and reports which are installed as they install.
+    func installExtensions(_ items: [ImportedExtension], profileID: String, installed: @escaping @MainActor (Set<String>) -> Void)
     /// Opens imported tabs as browser tabs in the current window.
     func openTabs(_ tabs: [ImportedTab])
     /// Whether browser profiles exist yet (else imports go to the default one).
@@ -41,6 +63,11 @@ public protocol OnboardingServices: AnyObject {
     // Lifecycle
     /// The window closed; `completed` is false when the user skipped.
     func onboardingDidEnd(completed: Bool)
+}
+
+public extension OnboardingServices {
+    var hasAccountsStep: Bool { false }
+    func makeAccountsStepView() -> NSView? { nil }
 }
 
 /// System Settings deep links.

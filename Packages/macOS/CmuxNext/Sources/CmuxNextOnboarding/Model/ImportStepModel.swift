@@ -21,16 +21,24 @@ public final class ImportStepModel {
     public private(set) var sources: [BrowserSource] = []
     /// Selected profile ids (`BrowserSourceProfile.id`).
     public private(set) var selectedProfiles: Set<String> = []
-    /// Kinds to import from every selected profile.
-    public private(set) var kinds: Set<ImportDataKind> = [.bookmarks, .history, .openTabs, .extensions]
+    /// Kinds to import from every selected profile, unless the profile has its own.
+    public private(set) var kinds: Set<ImportDataKind> = [.bookmarks, .history, .openTabs, .extensions, .cookies]
+    /// Per-profile choices that differ from `kinds`.
+    public private(set) var profileKinds: [String: Set<ImportDataKind>] = [:]
+    /// True: every source goes into one cmux profile (the default one);
+    /// false: each source profile becomes its own cmux browser profile.
+    public private(set) var mergeIntoOne = false
+    /// Extensions the one-step install has seen installed.
+    public private(set) var installedExtensions: Set<String> = []
+    public private(set) var installingAll = false
     /// Extensions whose store page was opened from the summary.
     public private(set) var installRequested: Set<String> = []
     public private(set) var tabsOpened = false
     @ObservationIgnored private let services: any OnboardingServices
     @ObservationIgnored private var task: Task<Void, Never>?
 
-    /// Kinds offered as toggles (passwords and cookies show why they are off).
-    public static let offeredKinds: [ImportDataKind] = [.bookmarks, .history, .openTabs, .extensions]
+    /// Kinds offered as toggles (passwords show why they are off).
+    public static let offeredKinds: [ImportDataKind] = [.bookmarks, .history, .openTabs, .cookies, .extensions]
 
     init(services: any OnboardingServices) {
         self.services = services
@@ -70,6 +78,25 @@ public final class ImportStepModel {
     public func toggle(_ kind: ImportDataKind) {
         guard canEditSelection, Self.offeredKinds.contains(kind) else { return }
         if kinds.remove(kind) == nil { kinds.insert(kind) }
+        profileKinds = [:]
+    }
+
+    /// The kinds that will be imported from `profile` (offered and available).
+    public func kinds(for profile: BrowserSourceProfile) -> Set<ImportDataKind> {
+        (profileKinds[profile.id] ?? kinds).filter { profile.availability(of: $0).isImportable }
+    }
+
+    /// Turns one kind on or off for one profile only.
+    public func toggle(_ kind: ImportDataKind, for profile: BrowserSourceProfile) {
+        guard canEditSelection, profile.availability(of: kind).isImportable else { return }
+        var set = profileKinds[profile.id] ?? kinds
+        if set.remove(kind) == nil { set.insert(kind) }
+        profileKinds[profile.id] = set
+    }
+
+    public func setMergeIntoOne(_ value: Bool) {
+        guard canEditSelection else { return }
+        mergeIntoOne = value
     }
 
     public var canEditSelection: Bool {
@@ -81,7 +108,8 @@ public final class ImportStepModel {
 
     public var plan: ImportPlan {
         let profiles = sources.flatMap(\.profiles).filter { selectedProfiles.contains($0.id) }
-        return ImportPlan(items: profiles.map { ImportPlan.Item(profile: $0, kinds: kinds) })
+        return ImportPlan(items: profiles.map { ImportPlan.Item(profile: $0, kinds: kinds(for: $0)) },
+                          mergeTarget: mergeIntoOne ? ImportPlan.defaultProfileID : nil)
     }
 
     public var canStart: Bool { canEditSelection && !plan.items.isEmpty }
@@ -117,6 +145,7 @@ public final class ImportStepModel {
             phase = .ready
             tabsOpened = false
             installRequested = []
+            installingAll = false
         default:
             return
         }
@@ -133,6 +162,21 @@ public final class ImportStepModel {
     public func install(_ item: ImportedExtension) {
         installRequested.insert(item.id)
         services.installExtension(item)
+    }
+
+    /// Installs every imported extension in one step: the store pages open
+    /// in background Chromium tabs of each extension's target profile, and
+    /// the list fills in as Chromium reports installs.
+    public func installAllExtensions() {
+        guard case .finished(let summary) = phase, !installingAll else { return }
+        installingAll = true
+        for batch in summary.batches where !batch.extensions.isEmpty {
+            let pending = batch.extensions.filter { !installedExtensions.contains($0.id) }
+            installRequested.formUnion(pending.map(\.id))
+            services.installExtensions(pending, profileID: batch.source.targetProfileID) { [weak self] installed in
+                self?.installedExtensions.formUnion(installed)
+            }
+        }
     }
 
     public func openImportedTabs() {

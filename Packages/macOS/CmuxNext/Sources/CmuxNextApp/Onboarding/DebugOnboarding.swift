@@ -10,10 +10,14 @@ import CmuxNextSettings
 /// every step without synthetic input. Returns the state after the action.
 ///
 /// `action`: `open` (`step`), `state`, `next`, `back`, `skip`, `close`,
-/// `theme` (`name`, empty for the Ghostty theme), `density` (`value`),
-/// `detect`, `toggle_profile` (`id`), `toggle_kind` (`kind`), `import`,
-/// `cancel_import`, `reset_import`, `open_tabs`, `install` (`id`),
-/// `claim` (`claim`), `claim_terminal`, `tour` (`page`).
+/// `theme` (`name`, empty for the Ghostty theme), `mode` (`value`: dark,
+/// light, system), `density` (`value`), `font` (`family`, `size`; empty
+/// resets), `titlebar` / `pane_border` (`value`), `pane_padding` (`value`),
+/// `preset` (`value`), `workflow` (`key`: desktop, dismissal, quit;
+/// `value`), `detect`, `toggle_profile` (`id`), `toggle_kind` (`kind`,
+/// optional `profile`), `merge` (`value` bool), `import`, `cancel_import`,
+/// `reset_import`, `open_tabs`, `install` (`id`), `install_all`, `claim`
+/// (`claim`), `claim_terminal`, `tour` (`page`).
 @MainActor
 enum DebugOnboarding {
     static func run(_ params: [String: JSONValue], services: AppServices) -> JSONValue {
@@ -30,12 +34,34 @@ enum DebugOnboarding {
         case "close": model.finish(completed: false)
         case "theme": model.theme.select(params["name"]?.stringValue.flatMap { $0.isEmpty ? nil : $0 })
         case "density": model.theme.setDensity(params["value"]?.stringValue == "comfortable" ? .comfortable : .compact)
+        case "mode": if let mode = params["value"]?.stringValue.flatMap(AppearanceStepModel.Mode.init(rawValue:)) { model.appearance.setMode(mode) }
+        case "font":
+            if let family = params["family"]?.stringValue { model.appearance.setFontFamily(family.isEmpty ? nil : family) }
+            if let size = params["size"] { model.appearance.setFontSize(size.doubleValue) }
+        case "titlebar": model.appearance.setTitlebarMinimal(params["value"]?.stringValue != "standard")
+        case "pane_border": model.appearance.setPaneBorder(params["value"]?.stringValue != "none")
+        case "pane_padding": model.appearance.setPanePadding(params["value"]?.doubleValue)
+        case "preset": if let kind = params["value"]?.stringValue.flatMap(ShortcutPreset.Kind.init(rawValue:)) { model.keyboard.select(kind) }
+        case "workflow":
+            let settings: [String: OnboardingSetting] = ["desktop": .desktopNotifications, "dismissal": .notificationDismissal, "quit": .quitBehavior]
+            if let setting = params["key"]?.stringValue.flatMap({ settings[$0] }), let value = params["value"]?.stringValue {
+                model.workflow.choose(setting, value)
+            }
+        case "merge": model.importer.setMergeIntoOne(params["value"]?.boolValue ?? false)
+        case "install_all": model.importer.installAllExtensions()
         case "detect": model.importer.redetect()
         case "toggle_profile":
             if let id = params["id"]?.stringValue, let profile = model.importer.sources.flatMap(\.profiles).first(where: { $0.id == id }) {
                 model.importer.toggle(profile)
             }
-        case "toggle_kind": if let kind = params["kind"]?.stringValue.flatMap(ImportDataKind.init(rawValue:)) { model.importer.toggle(kind) }
+        case "toggle_kind":
+            if let kind = params["kind"]?.stringValue.flatMap(ImportDataKind.init(rawValue:)) {
+                if let id = params["profile"]?.stringValue, let profile = model.importer.sources.flatMap(\.profiles).first(where: { $0.id == id }) {
+                    model.importer.toggle(kind, for: profile)
+                } else {
+                    model.importer.toggle(kind)
+                }
+            }
         case "import": model.importer.start()
         case "cancel_import": model.importer.cancel()
         case "reset_import": model.importer.reset()
@@ -64,6 +90,12 @@ enum DebugOnboarding {
         result["theme"] = model.theme.selected.map(JSONValue.string) ?? .null
         result["themes"] = .array(model.theme.choices.map { .string($0.name ?? "") })
         result["density"] = .string(model.theme.density.rawValue)
+        result["steps"] = .array(model.steps.map { .string($0.rawValue) })
+        result["mode"] = .string(model.appearance.mode.rawValue)
+        result["font"] = .object(["family": model.appearance.fontFamily.map(JSONValue.string) ?? .null,
+                                  "size": model.appearance.fontSize.map(JSONValue.number) ?? .null])
+        result["preset"] = .string(model.keyboard.selected.rawValue)
+        result["merge"] = .bool(model.importer.mergeIntoOne)
         result["import_phase"] = .string(phaseName(model.importer.phase))
         result["sources"] = .array(model.importer.sources.map { source in
             .object([
@@ -71,7 +103,8 @@ enum DebugOnboarding {
                 "full_disk_access": .bool(source.needsFullDiskAccess),
                 "profiles": .array(source.profiles.map { profile in
                     .object(["id": .string(profile.id), "name": .string(profile.displayName),
-                             "kinds": .array(profile.importableKinds.map { .string($0.rawValue) })])
+                             "kinds": .array(profile.importableKinds.map { .string($0.rawValue) }),
+                             "picked": .array(model.importer.kinds(for: profile).map(\.rawValue).sorted().map(JSONValue.string))])
                 }),
             ])
         })
@@ -80,7 +113,13 @@ enum DebugOnboarding {
         if case .finished(let summary) = model.importer.phase {
             let counts = summary.counts
             result["counts"] = .object(["bookmarks": JSONValue(counts.bookmarks), "history": JSONValue(counts.history),
-                                        "open_tabs": JSONValue(counts.openTabs), "extensions": JSONValue(counts.extensions)])
+                                        "open_tabs": JSONValue(counts.openTabs), "extensions": JSONValue(counts.extensions),
+                                        "cookies": JSONValue(counts.cookies)])
+            result["cookie_issues"] = .object(Dictionary(uniqueKeysWithValues: summary.batches.compactMap { batch in
+                batch.cookieError.map { (batch.source.sourceKey, JSONValue.string(String(describing: $0))) }
+            }))
+            result["targets"] = .object(Dictionary(uniqueKeysWithValues: summary.batches.map { ($0.source.sourceKey, JSONValue.string($0.source.targetProfileID)) }))
+            result["installed_extensions"] = .array(model.importer.installedExtensions.sorted().map(JSONValue.string))
             result["extensions"] = .array(summary.extensions.map { .object(["id": .string($0.id), "name": .string($0.name)]) })
             result["failures"] = .object(summary.failures.mapValues(JSONValue.string))
         }

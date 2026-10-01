@@ -5,7 +5,7 @@ import CmuxNextDesign
 /// follow density.
 enum OnboardingMetrics {
     static var compact: Bool { Metrics.density == .compact }
-    static var windowSize: NSSize { compact ? NSSize(width: 760, height: 540) : NSSize(width: 840, height: 600) }
+    static var windowSize: NSSize { compact ? NSSize(width: 1000, height: 680) : NSSize(width: 1080, height: 740) }
     /// Side inset of titles and step content.
     static var contentInset: CGFloat { Metrics.space6 * 3 }
     static var titleTop: CGFloat { Metrics.titlebarHeight + Metrics.space5 }

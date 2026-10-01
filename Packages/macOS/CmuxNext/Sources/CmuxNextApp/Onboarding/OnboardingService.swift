@@ -15,6 +15,8 @@ final class OnboardingService {
     let defaultApps: any DefaultAppRegistering
     let importStore: ImportedDataStore
     private(set) var controller: OnboardingWindowController?
+    /// Follows a one-step extension install; ends when onboarding closes.
+    var extensionWatch: Task<Void, Never>?
     private let logger = Logger(subsystem: "com.cmuxterm.app.next", category: "onboarding")
 
     /// Shows onboarding on the first launch even in a no-activate test launch.
@@ -42,7 +44,11 @@ final class OnboardingService {
         }
         let model = OnboardingModel(services: AppOnboardingServices(owner: self), start: step)
         let controller = OnboardingWindowController(model: model)
-        controller.onClose = { [weak self] in self?.controller = nil }
+        controller.onClose = { [weak self] in
+            self?.controller = nil
+            self?.extensionWatch?.cancel()
+            self?.extensionWatch = nil
+        }
         self.controller = controller
         controller.present()
     }

@@ -14,14 +14,17 @@ final class ImportPanelView: NSView {
     private let summary: ImportSummaryView
     private let notes: NSStackView
     private let chipGrid = NSGridView()
+    private let target = SegmentedPill(titles: [OnboardingStrings.targetSeparate, OnboardingStrings.targetMerged])
+    private let targetRow: NSView
     private var loop: RenderLoop?
 
     init(model: ImportStepModel) {
         self.model = model
         summary = ImportSummaryView(model: model)
-        let secrets = OnboardingLabel.make(OnboardingStrings.secretsNote, font: Typography.caption, color: Palette.textTertiary, lines: 3)
-        let profiles = OnboardingLabel.make(OnboardingStrings.profilesNote, font: Typography.caption, color: Palette.textTertiary, lines: 3)
-        notes = NSStackView(views: [profiles, secrets])
+        let secrets = OnboardingLabel.make(OnboardingStrings.cookiesNote, font: Typography.caption, color: Palette.textTertiary, lines: 3)
+        let profiles = OnboardingLabel.make(OnboardingStrings.passwordsNote, font: Typography.caption, color: Palette.textTertiary, lines: 3)
+        targetRow = SettingRowView(title: OnboardingStrings.targetTitle, control: target)
+        notes = NSStackView(views: [secrets, profiles])
         notes.orientation = .vertical
         notes.alignment = .leading
         notes.spacing = Metrics.space4
@@ -35,11 +38,13 @@ final class ImportPanelView: NSView {
             chip.onToggle = { [weak model] in model?.toggle(kind) }
             chips[kind] = chip
             row.append(chip)
-            if row.count == 2 { chipGrid.addRow(with: row); row = [] }
+            if row.count == 3 { chipGrid.addRow(with: row); row = [] }
         }
+        if !row.isEmpty { chipGrid.addRow(with: row) }
+        target.onSelect = { [weak model] in model?.setMergeIntoOne($0 == 1) }
         action.onPress = { [weak self] in self?.pressAction() }
         let actionRow = NSStackView(views: [action, FlexibleSpace()])
-        let stack = NSStackView(views: [chipGrid, notes, counts, summary, actionRow, progress, status])
+        let stack = NSStackView(views: [chipGrid, targetRow, notes, counts, summary, actionRow, progress, status])
         stack.orientation = .vertical
         stack.alignment = .leading
         stack.spacing = Metrics.space5
@@ -49,6 +54,7 @@ final class ImportPanelView: NSView {
             stack.leadingAnchor.constraint(equalTo: leadingAnchor), stack.trailingAnchor.constraint(equalTo: trailingAnchor),
             stack.topAnchor.constraint(equalTo: topAnchor), stack.bottomAnchor.constraint(lessThanOrEqualTo: bottomAnchor),
             notes.widthAnchor.constraint(equalTo: stack.widthAnchor),
+            targetRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
             actionRow.widthAnchor.constraint(equalTo: stack.widthAnchor),
             progress.widthAnchor.constraint(equalTo: stack.widthAnchor),
             status.widthAnchor.constraint(equalTo: stack.widthAnchor),
@@ -56,7 +62,6 @@ final class ImportPanelView: NSView {
             secrets.widthAnchor.constraint(equalTo: notes.widthAnchor),
             profiles.widthAnchor.constraint(equalTo: notes.widthAnchor),
         ])
-        profiles.isHidden = model.browserProfilesAvailable
         loop = RenderLoop { [weak self] in self?.render() }
     }
 
@@ -81,6 +86,8 @@ final class ImportPanelView: NSView {
         action.style = model.isImporting ? .secondary : (finished ? .plain : .primary)
         action.isEnabled = model.isImporting || finished || model.canStart
         chipGrid.isHidden = finished
+        targetRow.isHidden = finished || !model.browserProfilesAvailable
+        target.selectedIndex = model.mergeIntoOne ? 1 : 0
         progress.isHidden = !model.isImporting
         counts.isHidden = true
         summary.isHidden = true
@@ -92,7 +99,8 @@ final class ImportPanelView: NSView {
             if let step { counts.isHidden = false; counts.show(step.counts) }
         case .finished(let result):
             let failures = result.failures.keys.sorted().map(OnboardingStrings.couldNotRead)
-            status.stringValue = failures.joined(separator: " ")
+            let cookies = result.batches.compactMap { batch in batch.cookieError.map { OnboardingStrings.cookieIssue($0, source: batch.source.displayName) } }
+            status.stringValue = (failures + cookies).joined(separator: " ")
             counts.isHidden = false
             counts.show(result.counts)
             summary.isHidden = false

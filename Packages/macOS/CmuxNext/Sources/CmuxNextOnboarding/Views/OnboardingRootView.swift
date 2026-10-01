@@ -10,7 +10,7 @@ final class OnboardingRootView: ThemedView {
     private let subtitle = OnboardingLabel.make(font: Typography.subtitle, color: Palette.textSecondary, lines: 2)
     private let header = NSStackView()
     private let body = NSView()
-    private let progress = StepProgressView(count: OnboardingModel.Step.allCases.count)
+    private let progress: StepProgressView
     private let skip = OnboardingButton(OnboardingStrings.skip, style: .plain)
     private let back = OnboardingButton(OnboardingStrings.back, style: .plain)
     private let next = OnboardingButton(OnboardingStrings.continueButton, style: .primary, keyHint: "↵")
@@ -20,6 +20,7 @@ final class OnboardingRootView: ThemedView {
 
     init(model: OnboardingModel) {
         self.model = model
+        progress = StepProgressView(count: model.steps.count)
         super.init(frame: NSRect(origin: .zero, size: OnboardingMetrics.windowSize))
         translatesAutoresizingMaskIntoConstraints = true
         // The window background, redrawn at once on a theme change.
@@ -72,12 +73,12 @@ final class OnboardingRootView: ThemedView {
         progress.current = model.index
         back.isHidden = model.isFirst
         skip.isHidden = model.isLast
-        next.title = model.isLast ? OnboardingStrings.finish : OnboardingStrings.continueButton
+        next.title = model.isLast ? OnboardingStrings.finish : (model.isFirst ? OnboardingStrings.getStarted : OnboardingStrings.continueButton)
         next.style = hasOwnPrimaryAction(step) ? .secondary : .primary
         guard step != shownStep else { return }
         let forward = model.movedForward || shownStep == nil
         shownStep = step
-        eyebrow.stringValue = OnboardingStrings.stepCounter(model.index + 1, OnboardingModel.Step.allCases.count)
+        eyebrow.stringValue = OnboardingStrings.stepCounter(model.index + 1, model.steps.count)
         titleLabel.stringValue = title(step)
         subtitle.stringValue = subtitleText(step)
         stepView?.removeFromSuperview()
@@ -95,43 +96,50 @@ final class OnboardingRootView: ThemedView {
 
     /// While a step's own main action is still open, Continue steps back to secondary.
     private func hasOwnPrimaryAction(_ step: OnboardingModel.Step) -> Bool {
-        switch step {
-        case .importData:
-            if case .finished = model.importer.phase { return false }
-            return model.importer.canStart || model.importer.isImporting
-        case .defaultBrowser: return !model.defaults.isClaimed(.webBrowser)
-        case .defaultTerminal: return !DefaultHandlerClaim.terminalClaims.allSatisfy(model.defaults.isClaimed)
-        default: return false
-        }
+        guard step == .browser else { return false }
+        if case .finished = model.importer.phase { return false }
+        return model.importer.canStart || model.importer.isImporting
     }
 
     private func makeStepView(_ step: OnboardingModel.Step) -> NSView {
         switch step {
-        case .welcome: WelcomeStepView(model: model.theme)
-        case .importData: ImportStepView(model: model.importer)
-        case .defaultBrowser: DefaultBrowserStepView(model: model.defaults)
-        case .defaultTerminal: DefaultTerminalStepView(model: model.defaults)
-        case .tour: TourStepView(model: model.tour)
+        case .welcome: WelcomeHeroView(model: model.appearance)
+        case .appearance: AppearanceStepView(model: model.appearance)
+        case .browser: BrowserStepView(importer: model.importer, defaults: model.defaults)
+        case .keyboard: KeyboardStepView(model: model.keyboard)
+        case .workflow: WorkflowStepView(model: model.workflow)
+        case .accounts: accountsView()
+        case .ready: ReadyStepView(tour: model.tour, services: model.services)
         }
+    }
+
+    private func accountsView() -> NSView {
+        let view = model.services.makeAccountsStepView() ?? NSView()
+        view.translatesAutoresizingMaskIntoConstraints = false
+        return view
     }
 
     private func title(_ step: OnboardingModel.Step) -> String {
         switch step {
         case .welcome: OnboardingStrings.welcomeTitle
-        case .importData: OnboardingStrings.importTitle
-        case .defaultBrowser: OnboardingStrings.browserTitle
-        case .defaultTerminal: OnboardingStrings.terminalTitle
-        case .tour: OnboardingStrings.tourTitle
+        case .appearance: OnboardingStrings.appearanceTitle
+        case .browser: OnboardingStrings.importTitle
+        case .keyboard: OnboardingStrings.keyboardTitle
+        case .workflow: OnboardingStrings.workflowTitle
+        case .accounts: OnboardingStrings.accountsTitle
+        case .ready: OnboardingStrings.tourTitle
         }
     }
 
     private func subtitleText(_ step: OnboardingModel.Step) -> String {
         switch step {
         case .welcome: OnboardingStrings.welcomeSubtitle
-        case .importData: OnboardingStrings.importSubtitle
-        case .defaultBrowser: OnboardingStrings.browserSubtitle
-        case .defaultTerminal: OnboardingStrings.terminalSubtitle
-        case .tour: OnboardingStrings.tourSubtitle
+        case .appearance: OnboardingStrings.appearanceSubtitle
+        case .browser: OnboardingStrings.importSubtitle
+        case .keyboard: OnboardingStrings.keyboardSubtitle
+        case .workflow: OnboardingStrings.workflowSubtitle
+        case .accounts: OnboardingStrings.accountsSubtitle
+        case .ready: OnboardingStrings.tourSubtitle
         }
     }
 }

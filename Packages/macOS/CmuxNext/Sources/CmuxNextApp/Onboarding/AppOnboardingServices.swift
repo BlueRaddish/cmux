@@ -15,6 +15,7 @@ import CmuxNextTerminal
 final class AppOnboardingServices: OnboardingServices {
     unowned let owner: OnboardingService
     private var services: AppServices { owner.services }
+    var appServices: AppServices { owner.services }
 
     init(owner: OnboardingService) {
         self.owner = owner

@@ -2,21 +2,27 @@ public import CmuxNextDesign
 public import Foundation
 public import Observation
 
-/// The onboarding flow: five skippable steps and their state. Every step's
-/// work is async and cancellable; nothing here blocks the main thread.
+/// The onboarding flow: short, skippable steps. Every step's work is async
+/// and cancellable; nothing here blocks the main thread. Changes apply live
+/// as the user makes them; Skip on a step (or closing before its Continue)
+/// puts that step's settings back.
 @MainActor
 @Observable
 public final class OnboardingModel {
     public enum Step: String, CaseIterable, Sendable {
-        case welcome, importData, defaultBrowser, defaultTerminal, tour
+        case welcome, appearance, browser, keyboard, workflow, accounts, ready
     }
 
     public private(set) var step: Step
     /// Direction of the last move, for the slide animation.
     public private(set) var movedForward = true
-    public let theme: ThemeStepModel
+    /// The steps of this flow (`accounts` only when the App supplies it).
+    public let steps: [Step]
+    public let appearance: AppearanceStepModel
     public let importer: ImportStepModel
     public let defaults: DefaultAppsStepModel
+    public let keyboard: KeyboardStepModel
+    public let workflow: WorkflowStepModel
     public let tour: TourStepModel
     @ObservationIgnored public let services: any OnboardingServices
     /// Set once the flow ended, so a second close does not report twice.
@@ -24,62 +30,93 @@ public final class OnboardingModel {
     /// The window asks to close (the controller observes this).
     public var onEnd: ((Bool) -> Void)?
 
+    public var theme: ThemeStepModel { appearance.theme }
+
     public init(services: any OnboardingServices, start: Step = .welcome) {
         self.services = services
-        step = start
-        theme = ThemeStepModel(services: services)
+        steps = Step.allCases.filter { $0 != .accounts || services.hasAccountsStep }
+        step = steps.contains(start) ? start : .welcome
+        appearance = AppearanceStepModel(services: services)
         importer = ImportStepModel(services: services)
-        defaults = DefaultAppsStepModel(services: services)
+        let defaults = DefaultAppsStepModel(services: services)
+        self.defaults = defaults
+        keyboard = KeyboardStepModel(services: services)
+        workflow = WorkflowStepModel(services: services, defaults: defaults)
         tour = TourStepModel(services: services)
     }
 
-    public var index: Int { Step.allCases.firstIndex(of: step) ?? 0 }
-    public var isFirst: Bool { step == Step.allCases.first }
-    public var isLast: Bool { step == Step.allCases.last }
+    public var index: Int { steps.firstIndex(of: step) ?? 0 }
+    public var isFirst: Bool { step == steps.first }
+    public var isLast: Bool { step == steps.last }
 
-    /// Continue: commits the step's choices, then moves on (or finishes).
+    /// Continue: keeps the step's choices, then moves on (or finishes).
     public func next() {
-        if step == .welcome { theme.commit() }
+        commit(step)
         guard !isLast else { return finish(completed: true) }
-        go(to: Step.allCases[index + 1])
+        go(to: steps[index + 1])
     }
 
     public func back() {
         guard !isFirst else { return }
-        go(to: Step.allCases[index - 1])
+        go(to: steps[index - 1])
     }
 
-    /// Skip this step: move on without committing it.
+    /// Skip this step: undo what it changed, then move on.
     public func skipStep() {
-        if step == .welcome { theme.revert() }
+        revert(step)
         guard !isLast else { return finish(completed: true) }
-        go(to: Step.allCases[index + 1])
+        go(to: steps[index + 1])
     }
 
     public func go(to target: Step) {
-        guard target != step else { return }
-        movedForward = (Step.allCases.firstIndex(of: target) ?? 0) > index
+        guard target != step, steps.contains(target) else { return }
+        movedForward = (steps.firstIndex(of: target) ?? 0) > index
         step = target
         stepDidAppear()
     }
 
-    /// Starts the step's lazy work (theme files, browser detection, handler state).
+    /// Starts the step's lazy work (theme files and fonts, browser
+    /// detection, handler state).
     public func stepDidAppear() {
         switch step {
-        case .welcome: theme.load()
-        case .importData: importer.detect()
-        case .defaultBrowser, .defaultTerminal: defaults.refresh()
-        case .tour: break
+        case .welcome, .appearance: appearance.load()
+        case .browser:
+            importer.detect()
+            defaults.refresh()
+        case .workflow: defaults.refresh()
+        case .keyboard, .accounts, .ready: break
         }
     }
 
-    /// Ends the flow: `completed` false means skipped (Escape, Skip All, close button).
+    private func commit(_ step: Step) {
+        switch step {
+        case .appearance: appearance.commit()
+        case .keyboard: keyboard.commit()
+        case .workflow: workflow.draft.commit()
+        default: break
+        }
+    }
+
+    private func revert(_ step: Step) {
+        switch step {
+        case .appearance: appearance.revert()
+        case .keyboard: keyboard.revert()
+        case .workflow: workflow.draft.revert()
+        default: break
+        }
+    }
+
+    /// Ends the flow: `completed` false means skipped (Escape, close button).
+    /// Steps the user changed but never continued past are put back.
     public func finish(completed: Bool) {
         guard !ended else { return }
         ended = true
         importer.cancel()
-        // Closing before Continue on the welcome step undoes the live theme.
-        if !completed, !theme.isCommitted { theme.revert() }
+        if !completed {
+            if !appearance.isCommitted { appearance.revert() }
+            if !keyboard.isCommitted { keyboard.revert() }
+            if !workflow.draft.isCommitted { workflow.draft.revert() }
+        }
         services.onboardingDidEnd(completed: completed)
         onEnd?(completed)
     }

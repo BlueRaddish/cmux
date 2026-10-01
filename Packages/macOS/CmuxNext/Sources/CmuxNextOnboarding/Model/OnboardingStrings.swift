@@ -15,7 +15,7 @@ enum OnboardingStrings {
     // Welcome
     static var welcomeTitle: String { String(localized: "onboarding.welcome.title", defaultValue: "Welcome to cmux", bundle: .module) }
     static var welcomeSubtitle: String {
-        String(localized: "onboarding.welcome.subtitle", defaultValue: "A terminal and browser for agents, built on Ghostty. Pick a look; you can change it any time.", bundle: .module)
+        String(localized: "onboarding.welcome.intro", defaultValue: "A terminal and browser for agents, built on Ghostty. Two minutes and it feels like home.", bundle: .module)
     }
     static var theme: String { String(localized: "onboarding.welcome.theme", defaultValue: "Theme", bundle: .module) }
     static var ghosttyTheme: String { String(localized: "onboarding.welcome.ghosttyTheme", defaultValue: "Your Ghostty Theme", bundle: .module) }
@@ -29,7 +29,7 @@ enum OnboardingStrings {
     // Import
     static var importTitle: String { String(localized: "onboarding.import.title", defaultValue: "Bring Your Browser", bundle: .module) }
     static var importSubtitle: String {
-        String(localized: "onboarding.import.subtitle", defaultValue: "Import bookmarks, history, open tabs and extensions. Nothing leaves this Mac.", bundle: .module)
+        String(localized: "onboarding.import.subtitle2", defaultValue: "Bookmarks, history, open tabs, sign-ins and extensions from every browser on this Mac. Nothing leaves this Mac.", bundle: .module)
     }
     static var detecting: String { String(localized: "onboarding.import.detecting", defaultValue: "Looking for browsers…", bundle: .module) }
     static var noBrowsers: String { String(localized: "onboarding.import.none", defaultValue: "No other browsers found on this Mac.", bundle: .module) }
@@ -48,12 +48,6 @@ enum OnboardingStrings {
     static func couldNotRead(_ profile: String) -> String {
         String(format: String(localized: "onboarding.import.couldNotRead", defaultValue: "Could not read %@.", bundle: .module), profile)
     }
-    static var secretsNote: String {
-        String(localized: "onboarding.import.secretsNote", defaultValue: "Passwords and cookies are not imported yet: they need Chromium's own importer, which cmux does not include yet.", bundle: .module)
-    }
-    static var profilesNote: String {
-        String(localized: "onboarding.import.profilesNote", defaultValue: "Everything goes to your default browser profile, labeled by source, so it can move to its own profile later.", bundle: .module)
-    }
     static var fullDiskAccessTitle: String { String(localized: "onboarding.import.fda.title", defaultValue: "Safari needs Full Disk Access", bundle: .module) }
     static var fullDiskAccessDetail: String {
         String(localized: "onboarding.import.fda.detail", defaultValue: "macOS protects Safari's bookmarks and history. Turn on cmux in Full Disk Access, then check again.", bundle: .module)
@@ -64,7 +58,7 @@ enum OnboardingStrings {
     static var tabsOpened: String { String(localized: "onboarding.import.tabs.opened", defaultValue: "Tabs Opened", bundle: .module) }
     static var extensionsTitle: String { String(localized: "onboarding.import.extensions.title", defaultValue: "Reinstall Extensions", bundle: .module) }
     static var extensionsDetail: String {
-        String(localized: "onboarding.import.extensions.detail", defaultValue: "Extensions install from the Chrome Web Store. Open each one and click Add to Chrome.", bundle: .module)
+        String(localized: "onboarding.import.extensions.detail2", defaultValue: "Install All opens each store page in the background. Click Add to Chrome on each; the list checks them off.", bundle: .module)
     }
     static var install: String { String(localized: "onboarding.import.extensions.install", defaultValue: "Install", bundle: .module) }
     static var opened: String { String(localized: "onboarding.import.extensions.opened", defaultValue: "Opened", bundle: .module) }
@@ -76,7 +70,7 @@ enum OnboardingStrings {
         case .openTabs: String(localized: "onboarding.kind.openTabs", defaultValue: "Open Tabs", bundle: .module)
         case .extensions: String(localized: "onboarding.kind.extensions", defaultValue: "Extensions", bundle: .module)
         case .passwords: String(localized: "onboarding.kind.passwords", defaultValue: "Passwords", bundle: .module)
-        case .cookies: String(localized: "onboarding.kind.cookies", defaultValue: "Cookies", bundle: .module)
+        case .cookies: String(localized: "onboarding.kind.signIns", defaultValue: "Sign-ins", bundle: .module)
         }
     }
 }

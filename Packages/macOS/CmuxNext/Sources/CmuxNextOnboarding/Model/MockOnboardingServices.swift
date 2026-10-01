@@ -24,6 +24,14 @@ public final class MockOnboardingServices: OnboardingServices {
     public private(set) var opened: [URL] = []
     public private(set) var ended: Bool?
     public private(set) var plans: [ImportPlan] = []
+    /// cmux.json as the flow wrote it (dotted paths).
+    public var settings: [String: OnboardingValue] = [:]
+    public private(set) var settingWrites: [(String, OnboardingValue?)] = []
+    public var fonts = ["JetBrains Mono", "Menlo", "SF Mono"]
+    public private(set) var ranActions: [String] = []
+    public private(set) var extensionInstalls: [(profile: String, ids: [String])] = []
+    /// Reports these ids installed as soon as an install starts.
+    public var installsAtOnce = true
 
     public init(defaultApps: any DefaultAppRegistering = RecordingDefaultApps(appBundleURL: URL(fileURLWithPath: "/Applications/cmux.app"))) {
         self.defaultApps = defaultApps
@@ -36,6 +44,23 @@ public final class MockOnboardingServices: OnboardingServices {
         selectedThemeName = themeName
         self.density = density
     }
+
+    public func loadMonospacedFonts() async -> [String] { fonts }
+
+    public func setting(_ path: [String]) -> OnboardingValue? { settings[path.joined(separator: ".")] }
+
+    public func setSetting(_ path: [String], _ value: OnboardingValue?) {
+        let key = path.joined(separator: ".")
+        settings[key] = value
+        settingWrites.append((key, value))
+    }
+
+    public func defaultShortcutDisplay(for actionID: String) -> String? {
+        ["focusLeft": "⌥⌘←", "focusRight": "⌥⌘→", "splitRight": "⌘D", "splitDown": "⇧⌘D", "nextSurface": "⇧⌘]", "openBrowser": "⇧⌘L"][actionID]
+    }
+
+    public func runAction(_ actionID: String) { ranActions.append(actionID) }
+    public func isActionAvailable(_ actionID: String) -> Bool { true }
 
     public func detectBrowsers() async -> [BrowserSource] { sources }
 
@@ -51,6 +76,11 @@ public final class MockOnboardingServices: OnboardingServices {
     }
 
     public func installExtension(_ item: ImportedExtension) { installed.append(item.id) }
+
+    public func installExtensions(_ items: [ImportedExtension], profileID: String, installed: @escaping @MainActor (Set<String>) -> Void) {
+        extensionInstalls.append((profileID, items.map(\.id)))
+        if installsAtOnce { installed(Set(items.map(\.id))) }
+    }
     public func openTabs(_ tabs: [ImportedTab]) { openedTabs += tabs }
     public func openExternal(_ url: URL) { opened.append(url) }
 
