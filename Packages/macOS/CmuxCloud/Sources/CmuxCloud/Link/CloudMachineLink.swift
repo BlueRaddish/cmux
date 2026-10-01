@@ -131,6 +131,7 @@ public actor CloudMachineLink {
     // hops back into the actor through a Task, so nothing else touches them.
     private var process: CloudLinkProcess?
     private var processExit: CloudLinkFirstValue<Int32>?
+    private var stderrDrainTask: Task<Void, Never>?
     /// The link client's dedicated group lets cancellation terminate helpers that
     /// inherited the client's stdout or stderr pipes.
     private var processGroupIdentifier: Int32?
@@ -238,6 +239,7 @@ public actor CloudMachineLink {
         self.processExit = processExit
         self.processGroupIdentifier = processGroupIdentifier
         let stderrDrain = drainStderr(process.standardError.fileHandleForReading)
+        stderrDrainTask = stderrDrain
 
         // The first connection-snapshot line names the socket; later lines only update
         // transport topology and are ignored — but stdout keeps draining for the
@@ -304,6 +306,7 @@ public actor CloudMachineLink {
                 self.process = nil
                 self.processExit = nil
                 self.processGroupIdentifier = nil
+                self.stderrDrainTask = nil
             }
             await releaseHubLeaseOnce()
             try Task.checkCancellation()
@@ -332,15 +335,21 @@ public actor CloudMachineLink {
         await cancelEventsStream()
         if let process, let processExit {
             let processGroupIdentifier = self.processGroupIdentifier
+            let stderrDrain = self.stderrDrainTask
             await Self.terminateAndWait(
                 process,
                 exit: processExit,
                 processGroupIdentifier: processGroupIdentifier
             )
+            if let stderrDrain {
+                await Self.awaitStderrDrain(stderrDrain)
+            }
+            Self.forceKillProcessGroup(processGroupIdentifier)
             if self.process === process {
                 self.process = nil
                 self.processExit = nil
                 self.processGroupIdentifier = nil
+                self.stderrDrainTask = nil
             }
         }
         await resourceConnection?.close()
@@ -662,6 +671,11 @@ public actor CloudMachineLink {
 
     private func linkProcessDidExit(_ exitedProcess: CloudLinkProcess, status: Int32) async {
         guard process === exitedProcess else { return }
+        let processGroupIdentifier = self.processGroupIdentifier
+        if let stderrDrainTask {
+            await Self.awaitStderrDrain(stderrDrainTask)
+        }
+        Self.forceKillProcessGroup(processGroupIdentifier)
         eventsSubscriptionID = nil
         eventsReaderTask?.cancel()
         eventsReaderTask = nil
@@ -673,6 +687,7 @@ public actor CloudMachineLink {
         process = nil
         processExit = nil
         processGroupIdentifier = nil
+        stderrDrainTask = nil
         connected = nil
         if state != .unavailable {
             state = status == 0 ? .unavailable : .error
