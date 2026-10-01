@@ -164,7 +164,7 @@ final class ThemeGridView: NSView {
             card.onSelect = { [weak model] in model?.select(choice) }
             cards[choice.id] = card
             row.append(card)
-            if row.count == 4 {
+            if row.count == 3 {
                 grid.addRow(with: row)
                 row = []
             }
