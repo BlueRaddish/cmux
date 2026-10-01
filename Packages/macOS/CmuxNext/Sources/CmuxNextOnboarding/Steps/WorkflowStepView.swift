@@ -48,7 +48,7 @@ final class WorkflowStepView: NSView {
 
     private func render() {
         desktop.selectedIndex = model.choice(.desktopNotifications, in: WorkflowStepModel.desktopModes, fallback: "unlessFocused")
-        dismissal.selectedIndex = model.choice(.notificationDismissal, in: WorkflowStepModel.dismissalModes, fallback: "read")
+        dismissal.selectedIndex = model.choice(.notificationDismissal, in: WorkflowStepModel.dismissalModes, fallback: "keystroke")
         quit.selectedIndex = model.choice(.quitBehavior, in: WorkflowStepModel.quitBehaviors, fallback: "ask")
         let defaults = model.defaults
         let all = DefaultHandlerClaim.terminalClaims.allSatisfy(defaults.isClaimed)

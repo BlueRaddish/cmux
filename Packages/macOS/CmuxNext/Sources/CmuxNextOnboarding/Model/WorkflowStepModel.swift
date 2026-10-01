@@ -12,9 +12,9 @@ public final class WorkflowStepModel {
     /// Raw values of `notifications.desktop`, in display order.
     public static let desktopModes = ["unlessFocused", "always", "whenInactive", "never"]
     /// Raw values of `notifications.dismissal`.
-    public static let dismissalModes = ["read", "unread"]
+    public static let dismissalModes = ["keystroke", "focus", "never"]
     /// Raw values of `app.quitBehavior`.
-    public static let quitBehaviors = ["ask", "keep", "endKeepLayout", "endEverything"]
+    public static let quitBehaviors = ["ask", "keep", "end-keep-layout", "end-everything"]
 
     init(services: any OnboardingServices, defaults: DefaultAppsStepModel) {
         draft = SettingsDraft(services: services)

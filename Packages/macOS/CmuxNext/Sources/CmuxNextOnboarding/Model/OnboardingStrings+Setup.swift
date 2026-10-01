@@ -58,7 +58,7 @@ extension OnboardingStrings {
     static func presetDetail(_ kind: ShortcutPreset.Kind) -> String {
         switch kind {
         case .cmux: String(localized: "onboarding.keyboard.preset.cmux.detail", defaultValue: "The defaults: Command for app actions.", bundle: .module)
-        case .vim: String(localized: "onboarding.keyboard.preset.vim.detail", defaultValue: "Control-Command with H J K L to move.", bundle: .module)
+        case .vim: String(localized: "onboarding.keyboard.preset.vim.detail", defaultValue: "Control-Command with H J K L to move, V and X to split.", bundle: .module)
         case .tmux: String(localized: "onboarding.keyboard.preset.tmux.detail", defaultValue: "Control-Option, tmux's split and zoom keys.", bundle: .module)
         case .browser: String(localized: "onboarding.keyboard.preset.browser.detail", defaultValue: "⌘T opens a web tab, ⌥⌘ arrows switch tabs.", bundle: .module)
         }
@@ -91,17 +91,19 @@ extension OnboardingStrings {
         }
     }
     static func dismissalMode(_ raw: String) -> String {
-        raw == "unread"
-            ? String(localized: "onboarding.workflow.clear.manual", defaultValue: "When I Mark It", bundle: .module)
-            : String(localized: "onboarding.workflow.clear.seen", defaultValue: "When I See It", bundle: .module)
+        switch raw {
+        case "focus": String(localized: "onboarding.workflow.clear.focus", defaultValue: "When I Look", bundle: .module)
+        case "never": String(localized: "onboarding.workflow.clear.manual", defaultValue: "When I Mark It", bundle: .module)
+        default: String(localized: "onboarding.workflow.clear.type", defaultValue: "When I Type", bundle: .module)
+        }
     }
     static var quitHeader: String { String(localized: "onboarding.workflow.quit", defaultValue: "Quitting", bundle: .module) }
     static var whenQuitting: String { String(localized: "onboarding.workflow.whenQuitting", defaultValue: "When cmux quits", bundle: .module) }
     static func quitBehavior(_ raw: String) -> String {
         switch raw {
         case "keep": String(localized: "onboarding.workflow.quit.keep", defaultValue: "Keep Running", bundle: .module)
-        case "endKeepLayout": String(localized: "onboarding.workflow.quit.endKeepLayout", defaultValue: "End, Keep Layout", bundle: .module)
-        case "endEverything": String(localized: "onboarding.workflow.quit.endAll", defaultValue: "End All", bundle: .module)
+        case "end-keep-layout": String(localized: "onboarding.workflow.quit.endKeepLayout", defaultValue: "End, Keep Layout", bundle: .module)
+        case "end-everything": String(localized: "onboarding.workflow.quit.endAll", defaultValue: "End All", bundle: .module)
         default: String(localized: "onboarding.workflow.quit.ask", defaultValue: "Ask", bundle: .module)
         }
     }

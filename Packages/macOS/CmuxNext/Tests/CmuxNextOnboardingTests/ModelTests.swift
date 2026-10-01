@@ -22,10 +22,11 @@ import Testing
         let services = MockOnboardingServices()
         let model = OnboardingModel(services: services)
         #expect(model.isFirst)
-        for _ in 0..<4 { model.next() }
-        #expect(model.step == .tour && model.isLast)
+        #expect(model.steps == [.welcome, .appearance, .browser, .keyboard, .workflow, .ready], "no accounts step without the App's view")
+        for _ in 0..<5 { model.next() }
+        #expect(model.step == .ready && model.isLast)
         model.back()
-        #expect(model.step == .defaultTerminal && !model.movedForward)
+        #expect(model.step == .workflow && !model.movedForward)
         model.skipStep()
         model.next()
         #expect(services.ended == true)
@@ -36,7 +37,7 @@ import Testing
         let services = MockOnboardingServices()
         services.selectedThemeName = "Nord"
         services.themeChoices = [ThemeChoice(name: "Nord", input: .ghosttyDefault), ThemeChoice(name: "Vesper", input: .ghosttyDefault)]
-        let model = OnboardingModel(services: services)
+        let model = OnboardingModel(services: services, start: .appearance)
         model.stepDidAppear()
         await settle { model.theme.choices.count == 3 }
         #expect(model.theme.choices.map(\.name) == [nil, "Nord", "Vesper"])
@@ -45,7 +46,7 @@ import Testing
         #expect(services.selectedThemeName == "Vesper" && services.density == .comfortable)
         model.skipStep()
         #expect(services.selectedThemeName == "Nord" && services.density == .compact)
-        #expect(model.step == .importData)
+        #expect(model.step == .browser)
     }
 
     @Test func continueKeepsTheThemeAndClosingRevertsIt() {
@@ -85,14 +86,14 @@ import Testing
         batch.openTabs = [ImportedTab(url: URL(string: "https://a.example.com")!, title: "A")]
         batch.extensions = [ImportedExtension(id: String(repeating: "a", count: 32), name: "Ext")]
         services.summary = ImportSummary(batches: [batch])
-        let model = OnboardingModel(services: services, start: .importData)
+        let model = OnboardingModel(services: services, start: .browser)
         model.stepDidAppear()
         await settle { model.importer.phase == .ready }
         #expect(model.importer.selectedProfiles == [work.id], "the first importable profile is preselected")
         model.importer.toggle(empty)
         #expect(model.importer.selectedProfiles == [work.id], "a profile with nothing to import cannot be selected")
         model.importer.toggle(.openTabs)
-        #expect(model.importer.plan.items.first?.kinds == [.bookmarks, .history])
+        #expect(model.importer.plan.items.first?.kinds == Set<ImportDataKind>([.bookmarks, .history]))
         model.importer.start()
         await settle { if case .finished = model.importer.phase { true } else { false } }
         #expect(services.plans.count == 1)
@@ -107,7 +108,7 @@ import Testing
         let services = MockOnboardingServices()
         services.sources = [BrowserSource(browser: .chrome, appURL: nil, profiles: [profile("Default")])]
         services.holdsImport = true
-        let model = OnboardingModel(services: services, start: .importData)
+        let model = OnboardingModel(services: services, start: .browser)
         model.stepDidAppear()
         await settle { model.importer.phase == .ready }
         model.importer.start()
@@ -124,7 +125,7 @@ import Testing
     @Test func defaultBrowserAndTerminalClaimsUseTheRegistry() async {
         let registry = RecordingDefaultApps(appBundleURL: Self.app, schemes: ["https": URL(fileURLWithPath: "/Applications/Safari.app")])
         let services = MockOnboardingServices(defaultApps: registry)
-        let model = OnboardingModel(services: services, start: .defaultBrowser)
+        let model = OnboardingModel(services: services, start: .browser)
         model.stepDidAppear()
         #expect(model.defaults.currentBrowserName == "Safari")
         #expect(!model.defaults.isClaimed(.webBrowser))
@@ -141,7 +142,7 @@ import Testing
     @Test func refusedBrowserPromptLeavesItUnclaimedWithoutAnError() async {
         let registry = RecordingDefaultApps(appBundleURL: Self.app)
         registry.refusedSchemes = ["http"]
-        let model = OnboardingModel(services: MockOnboardingServices(defaultApps: registry), start: .defaultBrowser)
+        let model = OnboardingModel(services: MockOnboardingServices(defaultApps: registry), start: .browser)
         model.defaults.request(.webBrowser)
         await settle { model.defaults.pending.isEmpty }
         #expect(!model.defaults.isClaimed(.webBrowser))
@@ -149,7 +150,7 @@ import Testing
     }
 
     @Test func tourShowsLiveShortcuts() {
-        let model = OnboardingModel(services: MockOnboardingServices(), start: .tour)
+        let model = OnboardingModel(services: MockOnboardingServices(), start: .ready)
         #expect(model.tour.shortcuts(for: TourStepModel.pages[0]) == ["⇧⌘P"])
         model.tour.show(99)
         #expect(model.tour.current.kind == .screens)

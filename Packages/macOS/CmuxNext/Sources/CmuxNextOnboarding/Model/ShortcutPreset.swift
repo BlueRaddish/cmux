@@ -32,7 +32,7 @@ public nonisolated struct ShortcutPreset: Sendable, Identifiable, Equatable {
             Binding(actionID: "focusUp", chord: "ctrl+cmd+k", display: "⌃⌘K"),
             Binding(actionID: "focusRight", chord: "ctrl+cmd+l", display: "⌃⌘L"),
             Binding(actionID: "splitRight", chord: "ctrl+cmd+v", display: "⌃⌘V"),
-            Binding(actionID: "splitDown", chord: "ctrl+cmd+s", display: "⌃⌘S"),
+            Binding(actionID: "splitDown", chord: "ctrl+cmd+x", display: "⌃⌘X"),
         ]),
         ShortcutPreset(kind: .tmux, symbol: "rectangle.split.3x1", bindings: [
             Binding(actionID: "focusLeft", chord: "ctrl+opt+h", display: "⌃⌥H"),
@@ -50,10 +50,10 @@ public nonisolated struct ShortcutPreset: Sendable, Identifiable, Equatable {
             Binding(actionID: "newSurface", chord: "cmd+shift+l", display: "⇧⌘L"),
             Binding(actionID: "nextSurface", chord: "cmd+opt+right", display: "⌥⌘→"),
             Binding(actionID: "prevSurface", chord: "cmd+opt+left", display: "⌥⌘←"),
-            Binding(actionID: "focusLeft", chord: "ctrl+cmd+left", display: "⌃⌘←"),
-            Binding(actionID: "focusRight", chord: "ctrl+cmd+right", display: "⌃⌘→"),
-            Binding(actionID: "focusUp", chord: "ctrl+cmd+up", display: "⌃⌘↑"),
-            Binding(actionID: "focusDown", chord: "ctrl+cmd+down", display: "⌃⌘↓"),
+            Binding(actionID: "focusLeft", chord: "ctrl+opt+left", display: "⌃⌥←"),
+            Binding(actionID: "focusRight", chord: "ctrl+opt+right", display: "⌃⌥→"),
+            Binding(actionID: "focusUp", chord: "ctrl+opt+up", display: "⌃⌥↑"),
+            Binding(actionID: "focusDown", chord: "ctrl+opt+down", display: "⌃⌥↓"),
         ]),
     ]
 
