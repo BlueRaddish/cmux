@@ -1,5 +1,5 @@
 /* This file is generated. Do not edit by hand. */
-/* cmux-tui mux protocol 12, IR adbfa89de5ea3e4ee601c468ebe23c608b9eb8532e62701776fa0d86a6831300. */
+/* cmux-tui mux protocol 12, IR 081adc5992b2d847328bb77c6a41e47b12fb908e7efd3560015c3a6c09f2c7c6. */
 
 
 /** JSON accepted by the wire codec. bigint is serialized as an exact JSON integer. */
@@ -803,6 +803,10 @@ export type TerminalColors = {
   "palette"?: Record<string, ColorHex>;
   "selection_bg": (ColorHex) | null;
   "selection_fg": (ColorHex) | null;
+};
+
+export type TerminalCommandHistoryResult = {
+  "enabled": boolean;
 };
 
 export type TerminalEventsResult = {

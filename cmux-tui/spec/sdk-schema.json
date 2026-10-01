@@ -6040,6 +6040,20 @@
   "PaneRef": {
    "kind": "opaque_json",
    "reason": "A pane named by its numeric id or its public pane_ id."
+  },
+  "TerminalCommandHistoryResult": {
+   "kind": "object",
+   "fields": {
+    "enabled": {
+     "type": {
+      "kind": "scalar",
+      "name": "boolean"
+     },
+     "presence": "required",
+     "nullable": false
+    }
+   },
+   "additional_properties": false
   }
  },
  "commands": {
@@ -15570,6 +15584,34 @@
    "stream": null,
    "constraints": [
     "See spec/commands.md for the result object."
+   ]
+  },
+  "set-terminal-command-history": {
+   "authority": "local-admin",
+   "since": 12,
+   "capability": "terminal-command-journal-v1",
+   "request": {
+    "kind": "object",
+    "fields": {
+     "enabled": {
+      "type": {
+       "kind": "scalar",
+       "name": "boolean"
+      },
+      "presence": "required",
+      "nullable": false
+     }
+    },
+    "additional_properties": false
+   },
+   "result": {
+    "kind": "ref",
+    "name": "TerminalCommandHistoryResult"
+   },
+   "stream": null,
+   "constraints": [
+    "Off by default and after a daemon restart.",
+    "When on, finished OSC 133 shell commands are journaled as sensitive shell.command.finished records."
    ]
   }
  },

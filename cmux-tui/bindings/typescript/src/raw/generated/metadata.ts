@@ -1,10 +1,10 @@
 /* This file is generated. Do not edit by hand. */
-/* cmux-tui mux protocol 12, IR adbfa89de5ea3e4ee601c468ebe23c608b9eb8532e62701776fa0d86a6831300. */
+/* cmux-tui mux protocol 12, IR 081adc5992b2d847328bb77c6a41e47b12fb908e7efd3560015c3a6c09f2c7c6. */
 
 
 export const SDK_SCHEMA_VERSION = 2 as const;
 export const MUX_PROTOCOL_VERSION = 12 as const;
-export const SDK_IR_SHA256 = "adbfa89de5ea3e4ee601c468ebe23c608b9eb8532e62701776fa0d86a6831300" as const;
+export const SDK_IR_SHA256 = "081adc5992b2d847328bb77c6a41e47b12fb908e7efd3560015c3a6c09f2c7c6" as const;
 export const PROTOCOL = {
   "id_type": "uint64",
   "javascript_id_policy": "All protocol identifiers are uint64 JSON numbers. JavaScript and TypeScript SDKs must decode them losslessly as bigint (or validated decimal strings at their public boundary), and must not expose IEEE-754 number ids. Pairing request ids, revisions, timestamps, frame sequences, and reservation ids follow the same rule.",
@@ -1854,6 +1854,17 @@ export const COMMAND_METADATA = {
     "stream": null,
     "constraints": [
       "See spec/commands.md for the result object."
+    ]
+  },
+  "set-terminal-command-history": {
+    "authority": "local-admin",
+    "since": 12,
+    "capability": "terminal-command-journal-v1",
+    "fields": {},
+    "stream": null,
+    "constraints": [
+      "Off by default and after a daemon restart.",
+      "When on, finished OSC 133 shell commands are journaled as sensitive shell.command.finished records."
     ]
   },
   "set-terminal-idle-policy": {
@@ -7566,6 +7577,20 @@ export const TYPE_SCHEMAS: Readonly<Record<string, TypeSchema>> = {
         "type": {
           "kind": "ref",
           "name": "ColorHex"
+        }
+      }
+    },
+    "kind": "object"
+  },
+  "TerminalCommandHistoryResult": {
+    "additional_properties": false,
+    "fields": {
+      "enabled": {
+        "nullable": false,
+        "presence": "required",
+        "type": {
+          "kind": "scalar",
+          "name": "boolean"
         }
       }
     },
@@ -15609,6 +15634,26 @@ export const COMMAND_SCHEMAS: Readonly<Record<string, CommandSchema>> = {
     "result": {
       "kind": "ref",
       "name": "JsonValue"
+    }
+  },
+  "set-terminal-command-history": {
+    "request": {
+      "additional_properties": false,
+      "fields": {
+        "enabled": {
+          "nullable": false,
+          "presence": "required",
+          "type": {
+            "kind": "scalar",
+            "name": "boolean"
+          }
+        }
+      },
+      "kind": "object"
+    },
+    "result": {
+      "kind": "ref",
+      "name": "TerminalCommandHistoryResult"
     }
   },
   "set-terminal-idle-policy": {

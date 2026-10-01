@@ -321,6 +321,7 @@
     ],
     "local-admin": [
       "server-stats",
+      "set-terminal-command-history",
       "register-browser-provider",
       "get-browser-provider",
       "unregister-browser-provider",

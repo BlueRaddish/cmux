@@ -1228,6 +1228,12 @@ class TerminalColors:
 
 
 @dataclass(frozen=True)
+class TerminalCommandHistoryResult:
+    __cmux_schema_path__: ClassVar[str] = 'types/TerminalCommandHistoryResult'
+    enabled: bool
+
+
+@dataclass(frozen=True)
 class TerminalEventsResult:
     __cmux_schema_path__: ClassVar[str] = 'types/TerminalEventsResult'
     events: List[TerminalRegistryEvent]
@@ -2758,6 +2764,12 @@ class SetTabPinnedRequest:
 
 
 @dataclass(frozen=True)
+class SetTerminalCommandHistoryRequest:
+    __cmux_schema_path__: ClassVar[str] = 'commands/set-terminal-command-history/request'
+    enabled: bool
+
+
+@dataclass(frozen=True)
 class SetTerminalIdlePolicyRequest:
     __cmux_schema_path__: ClassVar[str] = 'commands/set-terminal-idle-policy/request'
     surface: Union[Id, None, MissingType] = field(default=MISSING)
@@ -3781,6 +3793,7 @@ __all__ = [
     'Tab',
     'TerminalColorOverrides',
     'TerminalColors',
+    'TerminalCommandHistoryResult',
     'TerminalEventsResult',
     'TerminalExit',
     'TerminalExitOutcomeExit',
@@ -3959,6 +3972,7 @@ __all__ = [
     'SetSizePolicyRequest',
     'SetSplitRatioRequest',
     'SetTabPinnedRequest',
+    'SetTerminalCommandHistoryRequest',
     'SetTerminalIdlePolicyRequest',
     'SetTerminalKeepRequest',
     'SetViewportPaneWidthRequest',
