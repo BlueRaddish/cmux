@@ -16402,6 +16402,10 @@ mod personal_terminal_tests;
 mod browser_profile_tests;
 
 #[cfg(test)]
+#[path = "server/bookmark_tests.rs"]
+mod bookmark_tests;
+
+#[cfg(test)]
 mod tests {
     use super::*;
     use crate::{
